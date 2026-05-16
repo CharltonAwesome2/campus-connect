@@ -22,9 +22,9 @@ A dashboard for managing student residences, applications, and property listings
 ## How to use it
 
 **Demo Login**  
-The login page lets you pick a role (Student, Landlord, or Admin) to see the corresponding dashboard. This is a demo—no real passwords needed.
+The login page lets you pick a role (Student, Landlord, or Admin) to see the corresponding dashboard. An valid email-format email should be entered, along with any password.
 
-**What happens when you click buttons?**
+**Button click actions**
 - **Apply** → Shows a confirmation message (demo only, not saved)
 - **Approve/Reject** → Shows a success or error message (demo only)
 - **Add Property** → Opens a form; submitting shows a success message (demo only)
