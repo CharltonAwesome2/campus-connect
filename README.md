@@ -25,9 +25,9 @@ A dashboard for managing student residences, applications, and property listings
 The login page lets you pick a role (Student, Landlord, or Admin) to see the corresponding dashboard. An valid email-format email should be entered, along with any password.
 
 **Button click actions**
-- **Apply** -> Shows a confirmation message (demo only, not saved)
-- **Approve/Reject** -> Shows a success or error message (demo only)
-- **Add Property** -> Opens a form; submitting shows a success message (demo only)
+- **Apply** → Shows a confirmation message (demo only, not saved)
+- **Approve/Reject** → Shows a success or error message (demo only)
+- **Add Property** → Opens a form; submitting shows a success message (demo only)
 
 **Notifications**  
 Small popup messages (toasts) appear when you take actions, confirming what happened.
