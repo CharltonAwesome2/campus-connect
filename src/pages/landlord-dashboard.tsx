@@ -98,6 +98,7 @@ export function LandlordDashboard() {
                   <TrendingUp className="w-6 h-6 text-green-600" />
                 </div>
               </div>
+              <Progress value={parseFloat(occupancyRate)} className="mt-2" />
             </CardContent>
           </Card>
 
