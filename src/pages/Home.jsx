@@ -1,8 +1,10 @@
-import { GraduationCap, Building2, User, Shield, Check, Scale, Zap } from "lucide-react";
+// src/pages/Home.jsx
+import { Building2, User, Shield, Check, Scale, Zap } from "lucide-react";
 import Card from "@components/Card";
 import Button from "@components/Button";
 import { useNavigate } from "react-router";
 import { motion } from "motion/react";
+import { publicUrl } from "@lib/assets";
 import styles from "./Home.module.css";
 
 export default function Home() {
@@ -69,7 +71,11 @@ export default function Home() {
           className={styles.hero}
         >
           <div className={styles.heroIcon}>
-            <GraduationCap size={48} color="#ffffff" />
+            <img
+              src={publicUrl("campus-connect.jpg")}
+              alt="CampusConnect logo"
+              className={styles.heroLogo}
+            />
           </div>
           <h1 className={styles.heroTitle}>CampusConnect Management System</h1>
           <p className={styles.heroText}>
@@ -77,6 +83,7 @@ export default function Home() {
             efficiency in student residence allocation
           </p>
         </motion.div>
+
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}

@@ -1,18 +1,44 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router';
-import ImageWithFallback from '@components/ImageWithFallback';
-import styles from './Login.module.css';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router";
+import ImageWithFallback from "@components/ImageWithFallback";
+import { useAuth } from "@context/AuthContext";
+import { accounts } from "@data/accounts";
+import styles from "./Login.module.css";
 
 export default function Login() {
   const navigate = useNavigate();
-  const [selectedRole, setSelectedRole] = useState('student');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
+  const { login, loginAs } = useAuth();
+
+  const [selectedRole, setSelectedRole] = useState("student");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
+  const [error, setError] = useState("");
+
+  const { user } = useAuth();
+  useEffect(() => {
+    if (user) navigate(`/${user.role}`, { replace: true });
+  }, [user, navigate]);
 
   const handleLogin = (e) => {
     e.preventDefault();
+    setError("");
+    const result = login(email, password, selectedRole);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
     navigate(`/${selectedRole}`);
+  };
+
+  const handleQuickLogin = (role) => {
+    setError("");
+    const result = loginAs(role);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    navigate(`/${role}`);
   };
 
   return (
@@ -42,15 +68,14 @@ export default function Login() {
           </div>
 
           <div className={styles.roles}>
-            {['student', 'landlord', 'admin'].map((role) => (
+            {["student", "landlord", "admin"].map((role) => (
               <button
                 key={role}
                 type="button"
                 onClick={() => setSelectedRole(role)}
-                className={[
-                  styles.roleBtn,
-                  selectedRole === role ? styles.roleBtnActive : '',
-                ].filter(Boolean).join(' ')}
+                className={[styles.roleBtn, selectedRole === role ? styles.roleBtnActive : ""]
+                  .filter(Boolean)
+                  .join(" ")}
               >
                 {role}
               </button>
@@ -59,30 +84,44 @@ export default function Login() {
 
           <form onSubmit={handleLogin} className={styles.formBody}>
             <div className={styles.field}>
-              <label htmlFor="email" className={styles.fieldLabel}>Email Address</label>
+              <label htmlFor="email" className={styles.fieldLabel}>
+                Email Address
+              </label>
               <input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
-                required
                 className={styles.fieldInput}
               />
             </div>
 
             <div className={styles.field}>
-              <label htmlFor="password" className={styles.fieldLabel}>Password</label>
+              <label htmlFor="password" className={styles.fieldLabel}>
+                Password
+              </label>
               <input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
-                required
                 className={styles.fieldInput}
               />
             </div>
+
+            {error && (
+              <p
+                style={{
+                  color: "#dc2626",
+                  fontSize: 14,
+                  margin: 0,
+                }}
+              >
+                {error}
+              </p>
+            )}
 
             <div className={styles.formMeta}>
               <label className={styles.checkboxLabel}>
@@ -94,7 +133,9 @@ export default function Login() {
                 />
                 <span className={styles.checkboxText}>Remember Me</span>
               </label>
-              <a href="#" className={styles.link}>Forgot Password?</a>
+              <a href="#" className={styles.link}>
+                Forgot Password?
+              </a>
             </div>
 
             <button type="submit" className={styles.submitBtn}>
@@ -102,10 +143,47 @@ export default function Login() {
             </button>
           </form>
 
+          <div style={{ marginTop: 24 }}>
+            <p
+              style={{
+                fontSize: 12,
+                color: "#6b7280",
+                textAlign: "center",
+                marginBottom: 8,
+                textTransform: "uppercase",
+                letterSpacing: 0.5,
+              }}
+            >
+              Quick login (testing)
+            </p>
+            <div style={{ display: "flex", gap: 8 }}>
+              {accounts.map((a) => (
+                <button
+                  key={a.role}
+                  type="button"
+                  onClick={() => handleQuickLogin(a.role)}
+                  style={{
+                    flex: 1,
+                    padding: "8px 10px",
+                    fontSize: 13,
+                    border: "1px solid #e5e7eb",
+                    borderRadius: 6,
+                    background: "#f9fafb",
+                    cursor: "pointer",
+                  }}
+                >
+                  {a.role}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className={styles.footer}>
             <p className={styles.footerText}>
-              Don't have an account?{' '}
-              <a href="#" className={styles.link}>Sign up</a>
+              Don't have an account?{" "}
+              <a href="#" className={styles.link}>
+                Sign up
+              </a>
             </p>
           </div>
         </div>

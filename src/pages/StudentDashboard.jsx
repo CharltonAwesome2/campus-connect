@@ -13,16 +13,17 @@ import { Search, Building2, FileText, CheckCircle, Clock, XCircle } from "lucide
 import { toast } from "sonner";
 import { motion } from "motion/react";
 import styles from "./StudentDashboard.module.css";
-import { currentStudent } from "@data/currentUser";
+import { useAuth } from "@context/AuthContext";
 import { priceOptions, typeOptions } from "@data/options";
 
 export default function StudentDashboard() {
   const { residences, applications, addApplication } = useData();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [priceFilter, setPriceFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
 
-  const myApplications = applications.filter((a) => a.studentId === currentStudent.id);
+  const myApplications = applications.filter((a) => a.studentId === user.id);;
 
   const handleApply = (residenceId) => {
     const residence = residences.find((r) => r.id === residenceId);
@@ -36,10 +37,10 @@ export default function StudentDashboard() {
 
     addApplication({
       id: `app-${Date.now()}`,
-      studentId: currentStudent.id,
-      studentName: currentStudent.name,
-      email: currentStudent.email,
-      phone: currentStudent.phone,
+      studentId: user.id,
+      studentName: user.name,
+      email: user.email,
+      phone: user.phone,
       residenceId: residence.id,
       residenceName: residence.name,
       status: "pending",
@@ -96,7 +97,7 @@ export default function StudentDashboard() {
   ];
 
   return (
-    <DashboardShell role="student" userName={CURRENT_STUDENT_NAME}>
+    <DashboardShell role="student" userName={user.name}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

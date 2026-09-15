@@ -13,11 +13,15 @@
 }
 
 @media (min-width: 640px) {
-  .inner { padding: 0 1.5rem; }
+  .inner {
+    padding: 0 1.5rem;
+  }
 }
 
 @media (min-width: 1024px) {
-  .inner { padding: 0 2rem; }
+  .inner {
+    padding: 0 2rem;
+  }
 }
 
 .brand {
@@ -33,8 +37,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  padding: 0; /* remove any inner padding so the image fills the box */
 }
-
+.logoImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* or "contain" if you don't want to crop */
+  display: block;
+}
 .title {
   font-weight: 600;
   color: #111827;
@@ -75,7 +86,9 @@
 }
 
 @media (min-width: 640px) {
-  .userName { display: block; }
+  .userName {
+    display: block;
+  }
 }
 
 .logoutBtn {
@@ -95,4 +108,28 @@
   align-items: center;
   justify-content: space-between;
   height: 4rem;
+}
+
+
+/* The container — fixed size, rounded, clips anything that overflows */
+.logo {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;          /* don't let flexbox squash it */
+  border-radius: 8px;
+  overflow: hidden;         /* clips the image to the rounded box */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* remove any background/padding from the old icon version */
+  background: transparent;
+  padding: 0;
+}
+
+/* The image — fills the box, keeps aspect ratio, never overflows */
+.logoImg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;      /* or "cover" */
+  display: block;
 }

@@ -33,6 +33,15 @@
   padding: 1rem;
   border-radius: 1rem;
   margin-bottom: 1.5rem;
+  overflow: hidden;
+  padding: 0;
+}
+
+.heroLogo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .heroTitle {

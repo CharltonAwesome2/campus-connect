@@ -15,10 +15,11 @@ import { monthlyData } from "@data/mock-data";
 import { Building2, FileText, TrendingUp, AlertCircle, CheckCircle, XCircle, Clock } from "lucide-react";
 import { motion } from "motion/react";
 import styles from "./AdminDashboard.module.css";
-import { currentAdmin } from "@data/currentUser";
+import { useAuth } from "@context/AuthContext";
 
 export default function AdminDashboard() {
   const { residences, applications } = useData();
+  const { user } = useAuth();
   const [selectedTab, setSelectedTab] = useState("overview");
 
   const totalRooms = residences.reduce((sum, r) => sum + r.totalRooms, 0);
@@ -67,7 +68,7 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <DashboardShell role="admin" userName={currentAdmin.name}>
+    <DashboardShell role="admin" userName={user.name}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

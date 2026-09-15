@@ -13,13 +13,14 @@ import { Building2, FileText, Plus, DollarSign, Users, TrendingUp, Home } from "
 import { toast } from "sonner";
 import { motion } from "motion/react";
 import styles from "./LandlordDashboard.module.css";
-import { currentLandlord } from '@data/currentUser';
+import { useAuth } from "@context/AuthContext";
 
 export default function LandlordDashboard() {
   const { residences, applications, addResidence, removeResidence, updateApplicationStatus } = useData();
+  const { user } = useAuth();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
-  const landlordResidences = residences.filter((r) => r.landlordId === LANDLORD_ID);
+  const landlordResidences = residences.filter((r) => r.landlordId === user.id);
   const landlordApplications = applications.filter((a) => landlordResidences.some((r) => r.id === a.residenceId));
 
   const handleApprove = (applicationId) => {
@@ -56,7 +57,7 @@ export default function LandlordDashboard() {
     }
     addResidence({
       id: `res-${Date.now()}`,
-      landlordId: LANDLORD_ID,
+      landlordId: user.id,
       name: data.name,
       image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=800",
       distance: data.distance,
@@ -119,7 +120,7 @@ export default function LandlordDashboard() {
   ];
 
   return (
-    <DashboardShell role="landlord" userName="Jane Anderson">
+    <DashboardShell role="landlord" userName={user.name}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
