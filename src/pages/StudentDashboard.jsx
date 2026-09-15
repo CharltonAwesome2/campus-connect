@@ -22,8 +22,6 @@ export default function StudentDashboard() {
   const [priceFilter, setPriceFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
 
-  const myApplications = applications.filter((a) => a.studentId === CURRENT_STUDENT_ID);
-
   const myApplications = applications.filter((a) => a.studentId === currentStudent.id);
 
   const handleApply = (residenceId) => {
