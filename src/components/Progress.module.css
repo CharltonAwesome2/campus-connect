@@ -1,0 +1,13 @@
+.progress {
+  height: 0.5rem;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: rgba(3, 2, 19, 0.12);
+}
+
+.indicator {
+  height: 100%;
+  background: var(--primary);
+  transition: width 0.3s;
+}

@@ -1,0 +1,171 @@
+.card {
+  overflow: hidden;
+  transition: box-shadow 0.3s;
+}
+
+.card:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+.imageWrap {
+  position: relative;
+  height: 12rem;
+  overflow: hidden;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.occupiedOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.occupiedBadge {
+  background: #ffffff;
+  color: #111827;
+  padding: 0.25rem 0.75rem;
+}
+
+.body {
+  padding: 1rem;
+}
+
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.name {
+  font-weight: 600;
+  color: #111827;
+  font-size: 1rem;
+}
+
+.typeBadge {
+  text-transform: capitalize;
+  border-color: #e5e7eb;
+  background: transparent;
+  color: #374151;
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.875rem;
+  color: #4b5563;
+  margin-bottom: 0.75rem;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.occupancy {
+  margin-bottom: 0.75rem;
+}
+
+.occupancyLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+  color: #4b5563;
+}
+
+.occupancyValue {
+  font-weight: 500;
+  color: #111827;
+}
+
+.occupancyTrack {
+  width: 100%;
+  background: #e5e7eb;
+  border-radius: 9999px;
+  height: 0.5rem;
+}
+
+.occupancyFill {
+  background: #2563eb;
+  height: 0.5rem;
+  border-radius: 9999px;
+  transition: width 0.3s;
+}
+
+.amenities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.amenity {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: #4b5563;
+  background: #f9fafb;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.price {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.priceUnit {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.footer {
+  padding: 1rem;
+  padding-top: 0;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.applyBtn {
+  width: 100%;
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.applyBtn:hover:not(:disabled) {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.editBtn {
+  flex: 1;
+}
+
+.removeBtn {
+  flex: 1;
+  color: #dc2626;
+  border-color: #e5e7eb;
+  background: transparent;
+}
+
+.removeBtn:hover {
+  color: #b91c1c;
+  background: #fef2f2;
+}

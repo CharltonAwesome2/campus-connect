@@ -1,0 +1,92 @@
+.card {
+  transition: box-shadow 0.2s;
+}
+
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.body {
+  padding: 1rem;
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.name {
+  font-weight: 600;
+  color: #111827;
+  font-size: 1rem;
+}
+
+.student {
+  font-size: 0.875rem;
+  color: #4b5563;
+  margin-top: 0.25rem;
+}
+
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.detail {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.approveBtn {
+  flex: 1;
+  background: #16a34a;
+  color: #ffffff;
+  border-color: #16a34a;
+}
+
+.approveBtn:hover {
+  background: #15803d;
+  border-color: #15803d;
+}
+
+.rejectBtn {
+  flex: 1;
+  color: #dc2626;
+  border-color: #e5e7eb;
+  background: transparent;
+}
+
+.rejectBtn:hover {
+  color: #b91c1c;
+  background: #fef2f2;
+}
+
+.badgeApproved {
+  background: #dcfce7;
+  color: #15803d;
+  border-color: #bbf7d0;
+}
+
+.badgeRejected {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.badgePending {
+  background: #fef9c3;
+  color: #a16207;
+  border-color: #fde68a;
+}

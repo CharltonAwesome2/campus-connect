@@ -1,0 +1,75 @@
+:root {
+  --background: #ffffff;
+  --foreground: oklch(0.145 0 0);
+  --card: #ffffff;
+  --card-foreground: oklch(0.145 0 0);
+
+  --primary: #030213;
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.95 0.0058 264.53);
+  --secondary-foreground: #030213;
+
+  --muted: #ececf0;
+  --muted-foreground: #717182;
+  --accent: #e9ebef;
+  --accent-foreground: #030213;
+
+  --destructive: #d4183d;
+  --destructive-foreground: #ffffff;
+
+  --border: rgba(0, 0, 0, 0.1);
+  --input-background: #f3f3f5;
+  --ring: oklch(0.708 0 0);
+
+  --radius: 0.625rem;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-9xl: 8rem;
+
+  --container-7xl: 80rem;
+}
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+* { border-color: var(--border); }
+
+html { font-size: 16px; }
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: var(--text-base);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1 { font-size: var(--text-2xl); font-weight: 500; line-height: 1.5; margin: 0; }
+h2 { font-size: var(--text-xl);  font-weight: 500; line-height: 1.5; margin: 0; }
+h3 { font-size: var(--text-lg);  font-weight: 500; line-height: 1.5; margin: 0; }
+h4 { font-size: var(--text-base);font-weight: 500; line-height: 1.5; margin: 0; }
+p  { margin: 0; }
+button { font: inherit; cursor: pointer; }
+img, svg { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+
+@keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes pulse   { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+@keyframes slideInRight  { from { transform: translateX(100%); }  to { transform: translateX(0); } }
+@keyframes slideOutRight { from { transform: translateX(0); }     to { transform: translateX(100%); } }
+@keyframes slideInLeft   { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+@keyframes slideOutLeft  { from { transform: translateX(0); }     to { transform: translateX(-100%); } }
+@keyframes slideInTop    { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+@keyframes slideOutTop   { from { transform: translateY(0); }     to { transform: translateY(-100%); } }
+@keyframes slideInBottom { from { transform: translateY(100%); }  to { transform: translateY(0); } }
+@keyframes slideOutBottom{ from { transform: translateY(0); }     to { transform: translateY(100%); } }

@@ -1,0 +1,18 @@
+.page {
+  min-height: 100vh;
+  background: #f9fafb;
+}
+
+.inner {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+@media (min-width: 640px) {
+  .inner { padding: 2rem 1.5rem; }
+}
+
+@media (min-width: 1024px) {
+  .inner { padding: 2rem 2rem; }
+}
