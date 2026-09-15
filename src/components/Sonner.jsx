@@ -1,17 +1,9 @@
-import { useTheme } from 'next-themes';
-import { Toaster as SonnerToaster } from 'sonner';
+import { useTheme } from "next-themes";
+import { Toaster as SonnerToaster } from "sonner";
+import styles from "./Sonner.module.css";
 
 export default function Sonner() {
-  const { theme = 'system' } = useTheme();
+  const { theme = "system" } = useTheme();
 
-  return (
-    <SonnerToaster
-      theme={theme}
-      style={{
-        '--normal-bg': 'var(--background)',
-        '--normal-text': 'var(--foreground)',
-        '--normal-border': 'var(--border)',
-      }}
-    />
-  );
+  return <SonnerToaster theme={theme} className={styles.toaster} />;
 }

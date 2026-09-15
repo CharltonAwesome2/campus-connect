@@ -1,0 +1,5 @@
+.toaster {
+  --normal-bg: var(--background);
+  --normal-text: var(--foreground);
+  --normal-border: var(--border);
+}

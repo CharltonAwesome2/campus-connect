@@ -1,6 +1,7 @@
-import Card from '@components/Card';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import styles from './TrendsChart.module.css';
+import Card from "@components/Card";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import styles from "./TrendsChart.module.css";
+import { tooltipContentStyle } from "@data/chartStyles";
 
 export default function TrendsChart({ data }) {
   return (
@@ -14,7 +15,7 @@ export default function TrendsChart({ data }) {
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis dataKey="month" stroke="#6b7280" />
             <YAxis stroke="#6b7280" />
-            <Tooltip contentStyle={styles.tooltip} />
+            <Tooltip contentStyle={tooltipContentStyle} />
             <Legend />
             <Line type="monotone" dataKey="applications" stroke="#3b82f6" strokeWidth={2} name="Applications" />
           </LineChart>

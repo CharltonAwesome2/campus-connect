@@ -1,6 +1,7 @@
-import Card from '@components/Card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import styles from './TypeDistribution.module.css';
+import Card from "@components/Card";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import styles from "./TypeDistribution.module.css";
+import { tooltipContentStyle } from "@data/chartStyles";
 
 export default function TypeDistribution({ data }) {
   return (
@@ -14,7 +15,7 @@ export default function TypeDistribution({ data }) {
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis type="number" stroke="#6b7280" />
             <YAxis dataKey="name" type="category" stroke="#6b7280" />
-            <Tooltip contentStyle={styles.tooltip} />
+            <Tooltip contentStyle={tooltipContentStyle} />
             <Bar dataKey="value" fill="#6366f1" name="Properties" />
           </BarChart>
         </ResponsiveContainer>
