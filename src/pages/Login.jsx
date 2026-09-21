@@ -4,6 +4,7 @@ import ImageWithFallback from "@components/ImageWithFallback";
 import { useAuth } from "@context/AuthContext";
 import { accounts } from "@data/accounts";
 import styles from "./Login.module.css";
+import { Link } from "react-router";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -181,9 +182,9 @@ export default function Login() {
           <div className={styles.footer}>
             <p className={styles.footerText}>
               Don't have an account?{" "}
-              <a href="#" className={styles.link}>
+              <Link to="/signup" className={styles.link}>
                 Sign up
-              </a>
+              </Link>
             </p>
           </div>
         </div>

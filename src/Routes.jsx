@@ -1,6 +1,7 @@
 // src/Routes.jsx
 import { createBrowserRouter } from "react-router";
 import Login from "@pages/Login";
+import Signup from "@pages/Signup";
 import Home from "@pages/Home";
 import StudentDashboard from "@pages/StudentDashboard";
 import LandlordDashboard from "@pages/LandlordDashboard";
@@ -11,6 +12,7 @@ import ProtectedRoute from "@components/ProtectedRoute";
 export const router = createBrowserRouter(
   [
     { path: "/", Component: Login },
+    { path: "/signup", Component: Signup },
     { path: "/select-role", Component: Home },
 
     {
