@@ -14,9 +14,7 @@ function resolveImageUrl(imageUrl) {
   if (!imageUrl) return null;
   if (/^https?:\/\//i.test(imageUrl)) return imageUrl;
 
-  const { data } = supabase.storage
-    .from(STORAGE_BUCKET)
-    .getPublicUrl(imageUrl);
+  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(imageUrl);
 
   return data.publicUrl;
 }
@@ -25,7 +23,8 @@ export const supabaseRepo = {
   async getResidences() {
     const { data, error } = await supabase
       .from("residences")
-      .select(`
+      .select(
+        `
         id,
         name,
         address,
@@ -40,7 +39,8 @@ export const supabaseRepo = {
         residence_amenities (
           amenities ( name )
         )
-      `)
+      `,
+      )
       .eq("is_active", true);
 
     if (error) throw error;
@@ -57,16 +57,12 @@ export const supabaseRepo = {
       totalRooms: r.total_rooms,
       type: r.type,
       landlordId: r.landlord_id,
-      amenities: (r.residence_amenities || [])
-        .map((ra) => ra.amenities?.name)
-        .filter(Boolean),
+      amenities: (r.residence_amenities || []).map((ra) => ra.amenities?.name).filter(Boolean),
     }));
   },
 
   async getApplications() {
-    const { data, error } = await supabase
-      .from("applications")
-      .select(`
+    const { data, error } = await supabase.from("applications").select(`
         id,
         status,
         applied_date,
@@ -116,13 +112,45 @@ export const supabaseRepo = {
   },
 
   async removeResidence(id) {
-    const { error } = await supabase
-      .from("residences")
-      .update({ is_active: false })
-      .eq("id", id);
+    const { error } = await supabase.from("residences").update({ is_active: false }).eq("id", id);
 
     if (error) throw error;
     return this.getResidences();
+  },
+
+  async getMonthlyData() {
+    const sevenMonthsAgo = new Date();
+    sevenMonthsAgo.setMonth(sevenMonthsAgo.getMonth() - 6);
+    sevenMonthsAgo.setDate(1);
+
+    const { data, error } = await supabase
+      .from("applications")
+      .select("applied_date")
+      .gte("applied_date", sevenMonthsAgo.toISOString().slice(0, 10));
+
+    if (error) throw error;
+
+    const now = new Date();
+    const buckets = [];
+
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      buckets.push({
+        month: d.toLocaleString("en", { month: "short" }),
+        year: d.getFullYear(),
+        applications: 0,
+      });
+    }
+
+    (data || []).forEach((row) => {
+      const d = new Date(row.applied_date);
+      const key = d.toLocaleString("en", { month: "short" });
+      const year = d.getFullYear();
+      const bucket = buckets.find((b) => b.month === key && b.year === year);
+      if (bucket) bucket.applications += 1;
+    });
+
+    return buckets.map(({ month, applications }) => ({ month, applications }));
   },
 
   async addApplication(application) {
@@ -146,8 +174,7 @@ export const supabaseRepo = {
       student_id: student.id,
       residence_id: application.residenceId,
       status: application.status || "pending",
-      applied_date:
-        application.appliedDate || new Date().toISOString().slice(0, 10),
+      applied_date: application.appliedDate || new Date().toISOString().slice(0, 10),
     });
 
     if (error) throw error;
@@ -155,10 +182,7 @@ export const supabaseRepo = {
   },
 
   async updateApplicationStatus(id, status) {
-    const { error } = await supabase
-      .from("applications")
-      .update({ status })
-      .eq("id", id);
+    const { error } = await supabase.from("applications").update({ status }).eq("id", id);
 
     if (error) throw error;
     return this.getApplications();

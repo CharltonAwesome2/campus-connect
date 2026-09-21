@@ -11,14 +11,13 @@ import OccupancyChart from "@components/charts/OccupancyChart";
 import StatusPie from "@components/charts/StatusPie";
 import TypeDistribution from "@components/charts/TypeDistribution";
 import { useData } from "@data/DataContext";
-import { monthlyData } from "@/data/mock-data";
 import { Building2, FileText, TrendingUp, AlertCircle, CheckCircle, XCircle, Clock } from "lucide-react";
 import { motion } from "motion/react";
 import styles from "./AdminDashboard.module.css";
 import { useAuth } from "@context/AuthContext";
 
 export default function AdminDashboard() {
-  const { residences, applications } = useData();
+  const { residences, applications, monthlyData } = useData();
   const { user } = useAuth();
   const [selectedTab, setSelectedTab] = useState("overview");
 
@@ -30,6 +29,11 @@ export default function AdminDashboard() {
   const pendingApplications = applications.filter((a) => a.status === "pending").length;
   const approvedApplications = applications.filter((a) => a.status === "approved");
   const rejectedApplications = applications.filter((a) => a.status === "rejected").length;
+
+  const occupancyData = monthlyData.map((m) => ({
+    month: m.month,
+    occupancy: Number(occupancyRate),
+  }));
 
   const alerts = residences
     .filter((r) => r.availableRooms === 0)
@@ -114,7 +118,7 @@ export default function AdminDashboard() {
           active === "overview" ? (
             <div className={styles.chartsGrid}>
               <TrendsChart data={monthlyData} />
-              <OccupancyChart data={monthlyData} />
+              <OccupancyChart data={occupancyData} />
               <StatusPie data={applicationStatusData} />
               <TypeDistribution data={typeDistribution} />
             </div>

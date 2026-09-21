@@ -9,33 +9,35 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load existing session on mount
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ? profileFromSession(session.user) : null);
-      setLoading(false);
+      if (session?.user) {
+        hydrateUser(session.user).then(setUser).finally(() => setLoading(false));
+      } else {
+        setLoading(false);
+      }
     });
 
-    // Keep in sync with sign-in / sign-out / token refresh
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ? profileFromSession(session.user) : null);
+      if (session?.user) {
+        hydrateUser(session.user).then(setUser);
+      } else {
+        setUser(null);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  /**
-   * Sign in with email + password against Supabase Auth.
-   * Returns { ok: true, user } or { ok: false, error }.
-   */
   const login = async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email.trim().toLowerCase(),
       password,
     });
     if (error) return { ok: false, error: error.message };
-    return { ok: true, user: profileFromSession(data.user) };
+    const enriched = await hydrateUser(data.user);
+    return { ok: true, user: enriched };
   };
 
   const logout = async () => {
@@ -51,16 +53,37 @@ export function AuthProvider({ children }) {
 }
 
 /**
- * The JWT carries the profile metadata we set during seeding.
- * Role comes from the token — the client never decides it.
+ * Build the client-side user shape. Pulls the entity-specific ID
+ * (landlords.id or students.id) so components can match records.
  */
-function profileFromSession(authUser) {
-  return {
-    id: authUser.id,
+async function hydrateUser(authUser) {
+  const base = {
+    id: authUser.id,                          // = profiles.id
     email: authUser.email,
     name: authUser.user_metadata?.full_name || authUser.email,
     role: authUser.user_metadata?.role || "student",
   };
+
+  if (base.role === "landlord") {
+    const { data } = await supabase
+      .from("landlords")
+      .select("id")
+      .eq("user_id", authUser.id)
+      .maybeSingle();
+    return { ...base, landlordId: data?.id ?? null };
+  }
+
+  if (base.role === "student") {
+    const { data } = await supabase
+      .from("students")
+      .select("id")
+      .eq("user_id", authUser.id)
+      .maybeSingle();
+    return { ...base, studentId: data?.id ?? null };
+  }
+
+  // admin — no extra ID needed
+  return base;
 }
 
 export const useAuth = () => {

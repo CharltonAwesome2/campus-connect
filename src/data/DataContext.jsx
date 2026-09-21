@@ -8,26 +8,30 @@ const DataContext = createContext(null);
 export function DataProvider({ children }) {
   const [residences, setResidences] = useState([]);
   const [applications, setApplications] = useState([]);
+  const [monthlyData, setMonthlyData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const { user } = useAuth();
 
-  // Reload whenever the auth user changes (login/logout)
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
       setLoading(true);
+      setError(null);
       try {
-        const [res, apps] = await Promise.all([
+        const [res, apps, monthly] = await Promise.all([
           db.getResidences(),
           db.getApplications(),
+          db.getMonthlyData(),
         ]);
-        if (!cancelled) {
-          setResidences(res);
-          setApplications(apps);
-        }
+        if (cancelled) return;
+        setResidences(res);
+        setApplications(apps);
+        setMonthlyData(monthly);
       } catch (err) {
         console.error("Failed to load data", err);
+        if (!cancelled) setError(err);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -37,7 +41,7 @@ export function DataProvider({ children }) {
     return () => {
       cancelled = true;
     };
-  }, [user?.id]); // re-run when auth identity changes
+  }, [user?.id]);
 
   const addResidence = async (residence) => {
     const updated = await db.addResidence(residence);
@@ -52,6 +56,8 @@ export function DataProvider({ children }) {
   const addApplication = async (application) => {
     const updated = await db.addApplication(application);
     setApplications(updated);
+    // Refresh monthly aggregates since application counts changed
+    setMonthlyData(await db.getMonthlyData());
   };
 
   const updateApplicationStatus = async (id, status) => {
@@ -64,7 +70,9 @@ export function DataProvider({ children }) {
       value={{
         residences,
         applications,
+        monthlyData,
         loading,
+        error,
         addResidence,
         removeResidence,
         addApplication,

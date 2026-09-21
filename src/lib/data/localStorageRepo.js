@@ -1,8 +1,5 @@
 // src/lib/data/localStorageRepo.js
-import {
-  residences as mockResidences,
-  applications as mockApplications,
-} from "@/data/mock-data";
+import { residences as mockResidences, applications as mockApplications } from "@/data/mock-data";
 
 const KEYS = {
   residences: "campus_residences",
@@ -61,5 +58,30 @@ export const localStorageRepo = {
     const updated = all.map((a) => (a.id === id ? { ...a, status } : a));
     save(KEYS.applications, updated);
     return updated;
+  },
+
+  async getMonthlyData() {
+    const apps = await this.getApplications();
+    const now = new Date();
+    const buckets = [];
+
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      buckets.push({
+        month: d.toLocaleString("en", { month: "short" }),
+        year: d.getFullYear(),
+        applications: 0,
+      });
+    }
+
+    apps.forEach((a) => {
+      const d = new Date(a.appliedDate);
+      const key = d.toLocaleString("en", { month: "short" });
+      const year = d.getFullYear();
+      const bucket = buckets.find((b) => b.month === key && b.year === year);
+      if (bucket) bucket.applications += 1;
+    });
+
+    return buckets.map(({ month, applications }) => ({ month, applications }));
   },
 };

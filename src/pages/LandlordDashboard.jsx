@@ -20,9 +20,12 @@ export default function LandlordDashboard() {
   const { user } = useAuth();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
-  const landlordResidences = residences.filter((r) => r.landlordId === user.id);
-  const landlordApplications = applications.filter((a) => landlordResidences.some((r) => r.id === a.residenceId));
+  const landlordResidences = user?.landlordId ? residences.filter((r) => r.landlordId === user.landlordId) : [];
 
+  const landlordApplications = user?.landlordId
+    ? applications.filter((a) => landlordResidences.some((r) => r.id === a.residenceId))
+    : [];
+    
   const handleApprove = (applicationId) => {
     const application = applications.find((a) => a.id === applicationId);
     updateApplicationStatus(applicationId, "approved");
@@ -56,16 +59,17 @@ export default function LandlordDashboard() {
       return;
     }
     addResidence({
-      id: `res-${Date.now()}`,
-      landlordId: user.id,
+      landlordId: user.landlordId, // was user.id — this was wrong too
       name: data.name,
+      address: data.address || "—",
+      description: data.description || "",
       image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=800",
-      distance: data.distance,
+      distanceKm: data.distance ?? 0, // DB expects distanceKm
       price: data.price,
       type: data.type,
       totalRooms: data.totalRooms,
       availableRooms: data.totalRooms,
-      amenities: ["WiFi", "Parking"],
+      amenities: [],
     });
     toast.success("New property added successfully!");
     setIsAddDialogOpen(false);
