@@ -4,7 +4,7 @@
 
 export const accounts = [
   {
-    role: "student",
+    role: "STUDENT",
     label: "Emma Johnson",
     email: "emma.j@university.edu",
     password: "student123",
@@ -17,7 +17,7 @@ export const accounts = [
     },
   },
   {
-    role: "landlord",
+    role: "LANDLORD",
     label: "Campus Housing Co.",
     email: "contact@campushousing.com",
     password: "landlord123",
@@ -30,7 +30,7 @@ export const accounts = [
     },
   },
   {
-    role: "admin",
+    role: "ADMIN",
     label: "Admin User",
     email: "admin@campusconnect.com",
     password: "admin123",

@@ -1,32 +1,51 @@
 // src/data/DataContext.jsx
-import { createContext, useContext, useState } from 'react';
-import {
-  residences as initialResidences,
-  applications as initialApplications,
-} from './mock-data';
+import { createContext, useContext, useState, useEffect } from "react";
+import { db } from "@lib/data";
 
 const DataContext = createContext(null);
 
 export function DataProvider({ children }) {
-  const [residences, setResidences] = useState(initialResidences);
-  const [applications, setApplications] = useState(initialApplications);
+  const [residences, setResidences] = useState([]);
+  const [applications, setApplications] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const addResidence = (residence) => {
-    setResidences((prev) => [...prev, residence]);
+  // Load data once on mount
+  useEffect(() => {
+    async function load() {
+      try {
+        const [res, apps] = await Promise.all([
+          db.getResidences(),
+          db.getApplications(),
+        ]);
+        setResidences(res);
+        setApplications(apps);
+      } catch (err) {
+        console.error("Failed to load data", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  const addResidence = async (residence) => {
+    const updated = await db.addResidence(residence);
+    setResidences(updated);
   };
 
-  const removeResidence = (id) => {
-    setResidences((prev) => prev.filter((r) => r.id !== id));
+  const removeResidence = async (id) => {
+    const updated = await db.removeResidence(id);
+    setResidences(updated);
   };
 
-  const addApplication = (application) => {
-    setApplications((prev) => [...prev, application]);
+  const addApplication = async (application) => {
+    const updated = await db.addApplication(application);
+    setApplications(updated);
   };
 
-  const updateApplicationStatus = (id, status) => {
-    setApplications((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, status } : a))
-    );
+  const updateApplicationStatus = async (id, status) => {
+    const updated = await db.updateApplicationStatus(id, status);
+    setApplications(updated);
   };
 
   return (
@@ -34,6 +53,7 @@ export function DataProvider({ children }) {
       value={{
         residences,
         applications,
+        loading,               // optional – useful later
         addResidence,
         removeResidence,
         addApplication,
@@ -47,6 +67,6 @@ export function DataProvider({ children }) {
 
 export function useData() {
   const ctx = useContext(DataContext);
-  if (!ctx) throw new Error('useData must be used inside DataProvider');
+  if (!ctx) throw new Error("useData must be used inside DataProvider");
   return ctx;
 }

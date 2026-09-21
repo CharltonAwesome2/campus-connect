@@ -11,7 +11,7 @@ import OccupancyChart from "@components/charts/OccupancyChart";
 import StatusPie from "@components/charts/StatusPie";
 import TypeDistribution from "@components/charts/TypeDistribution";
 import { useData } from "@data/DataContext";
-import { monthlyData } from "@data/mock-data";
+import { monthlyData } from "@/data/mock-data";
 import { Building2, FileText, TrendingUp, AlertCircle, CheckCircle, XCircle, Clock } from "lucide-react";
 import { motion } from "motion/react";
 import styles from "./AdminDashboard.module.css";
