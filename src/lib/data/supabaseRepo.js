@@ -1,6 +1,26 @@
 // src/lib/data/supabaseRepo.js
 import { supabase } from "../supabase";
 
+// ---------------------------------------------------------------------------
+// Image URL resolution
+// ---------------------------------------------------------------------------
+// The DB stores either:
+//   - A full URL ("https://images.unsplash.com/...")  → return as-is
+//   - A bare filename ("image1.png")                   → prepend bucket base
+// ---------------------------------------------------------------------------
+const STORAGE_BUCKET = "residence-images";
+
+function resolveImageUrl(imageUrl) {
+  if (!imageUrl) return null;
+  if (/^https?:\/\//i.test(imageUrl)) return imageUrl;
+
+  const { data } = supabase.storage
+    .from(STORAGE_BUCKET)
+    .getPublicUrl(imageUrl);
+
+  return data.publicUrl;
+}
+
 export const supabaseRepo = {
   async getResidences() {
     const { data, error } = await supabase
@@ -25,20 +45,21 @@ export const supabaseRepo = {
 
     if (error) throw error;
 
-    // Map database shape → the shape your components already expect
     return (data || []).map((r) => ({
       id: r.id,
       name: r.name,
       address: r.address,
       description: r.description,
-      image: r.image_url,
+      image: resolveImageUrl(r.image_url),
       price: r.price,
       distanceKm: Number(r.distance_km),
       availableRooms: r.available_rooms,
       totalRooms: r.total_rooms,
       type: r.type,
       landlordId: r.landlord_id,
-      amenities: (r.residence_amenities || []).map((ra) => ra.amenities.name),
+      amenities: (r.residence_amenities || [])
+        .map((ra) => ra.amenities?.name)
+        .filter(Boolean),
     }));
   },
 
@@ -72,34 +93,32 @@ export const supabaseRepo = {
   },
 
   async addResidence(residence) {
-    // You will need a real landlord_id UUID from your landlords table
+    // Caller passes `landlordId` as a real UUID from the landlords table.
     const { data, error } = await supabase
       .from("residences")
       .insert({
         name: residence.name,
         address: residence.address,
         description: residence.description,
-        image_url: residence.image,
+        image_url: residence.image, // store whatever form the caller passes
         price: residence.price,
         distance_km: residence.distanceKm,
         available_rooms: residence.availableRooms,
         total_rooms: residence.totalRooms,
         type: residence.type,
-        landlord_id: residence.landlordId, // must be a real UUID
+        landlord_id: residence.landlordId,
       })
       .select()
       .single();
 
     if (error) throw error;
-
-    // Return the full updated list so DataContext stays simple
     return this.getResidences();
   },
 
   async removeResidence(id) {
     const { error } = await supabase
       .from("residences")
-      .update({ is_active: false }) // soft delete
+      .update({ is_active: false })
       .eq("id", id);
 
     if (error) throw error;
@@ -107,11 +126,28 @@ export const supabaseRepo = {
   },
 
   async addApplication(application) {
+    // Resolve the student UUID from the currently authenticated user.
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("You must be signed in to apply.");
+
+    const { data: student, error: studentErr } = await supabase
+      .from("students")
+      .select("id")
+      .eq("user_id", user.id)
+      .single();
+
+    if (studentErr || !student) {
+      throw new Error("No student profile found for the current user.");
+    }
+
     const { error } = await supabase.from("applications").insert({
-      student_id: application.studentId,   // must be real UUID
-      residence_id: application.residenceId, // must be real UUID
+      student_id: student.id,
+      residence_id: application.residenceId,
       status: application.status || "pending",
-      applied_date: application.appliedDate || new Date().toISOString().slice(0, 10),
+      applied_date:
+        application.appliedDate || new Date().toISOString().slice(0, 10),
     });
 
     if (error) throw error;

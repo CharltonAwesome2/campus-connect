@@ -1,48 +1,30 @@
+// src/data/accounts.js
+// Quick-login shortcuts for testing. Real authentication goes through Supabase.
+// The passwords here mirror the seeded auth users — they are test accounts only.
+
 export const accounts = [
   {
-    role: "STUDENT",
+    role: "student",
     label: "Emma Johnson",
     email: "emma.j@test.local",
     password: "student123",
-    user: {
-      id: "s1",
-      name: "Emma Johnson",
-      email: "emma.j@test.local",
-      phone: "555-0101",
-      role: "student",
-    },
   },
   {
-    role: "LANDLORD",
+    role: "landlord",
     label: "Campus Housing Co.",
-    email: "landlord1@test.local",
+    email: "campushousing@test.local",
     password: "landlord123",
-    user: {
-      id: "l1",
-      name: "Campus Housing Co.",
-      email: "landlord1@test.local",
-      phone: "555-1001",
-      role: "landlord",
-    },
   },
   {
-    role: "ADMIN",
+    role: "admin",
     label: "System Admin",
     email: "admin@test.local",
     password: "admin123",
-    user: {
-      id: "admin",
-      name: "System Admin",
-      email: "admin@test.local",
-      role: "admin",
-    },
   },
 ];
 
-export const findAccount = (email, password, role) =>
+// Kept for any legacy code that still imports it, but real validation is in Supabase.
+export const findAccount = (email) =>
   accounts.find(
-    (a) =>
-      a.email.toLowerCase() === email.trim().toLowerCase() &&
-      a.password === password &&
-      a.role === role
+    (a) => a.email.toLowerCase() === email.trim().toLowerCase()
   );

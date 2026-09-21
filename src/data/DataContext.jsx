@@ -1,6 +1,7 @@
 // src/data/DataContext.jsx
 import { createContext, useContext, useState, useEffect } from "react";
 import { db } from "@lib/data";
+import { useAuth } from "@context/AuthContext";
 
 const DataContext = createContext(null);
 
@@ -8,25 +9,35 @@ export function DataProvider({ children }) {
   const [residences, setResidences] = useState([]);
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
-  // Load data once on mount
+  // Reload whenever the auth user changes (login/logout)
   useEffect(() => {
+    let cancelled = false;
+
     async function load() {
+      setLoading(true);
       try {
         const [res, apps] = await Promise.all([
           db.getResidences(),
           db.getApplications(),
         ]);
-        setResidences(res);
-        setApplications(apps);
+        if (!cancelled) {
+          setResidences(res);
+          setApplications(apps);
+        }
       } catch (err) {
         console.error("Failed to load data", err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
+
     load();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]); // re-run when auth identity changes
 
   const addResidence = async (residence) => {
     const updated = await db.addResidence(residence);
@@ -53,7 +64,7 @@ export function DataProvider({ children }) {
       value={{
         residences,
         applications,
-        loading,               // optional – useful later
+        loading,
         addResidence,
         removeResidence,
         addApplication,

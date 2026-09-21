@@ -1,62 +1,70 @@
 // src/context/AuthContext.jsx
 import { createContext, useContext, useEffect, useState } from "react";
-import { accounts } from "@data/accounts";
+import { supabase } from "../lib/supabase";
 
 const AuthContext = createContext(null);
-const STORAGE_KEY = "campusconnect.auth";
-
-function loadStoredUser() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(loadStoredUser);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-    else localStorage.removeItem(STORAGE_KEY);
-  }, [user]);
+    // Load existing session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ? profileFromSession(session.user) : null);
+      setLoading(false);
+    });
 
-  const login = (email, password, role) => {
-    if (!email || !password) {
-      return { ok: false, error: "Please enter your email and password." };
-    }
-    const account = accounts.find(
-      (a) =>
-        a.email.toLowerCase() === email.trim().toLowerCase() &&
-        a.password === password &&
-        a.role === role
-    );
-    if (!account) {
-      return { ok: false, error: "Invalid credentials for the selected role." };
-    }
-    setUser(account.user);
-    return { ok: true };
+    // Keep in sync with sign-in / sign-out / token refresh
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ? profileFromSession(session.user) : null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  /**
+   * Sign in with email + password against Supabase Auth.
+   * Returns { ok: true, user } or { ok: false, error }.
+   */
+  const login = async (email, password) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, user: profileFromSession(data.user) };
   };
 
-  const loginAs = (role) => {
-    const account = accounts.find((a) => a.role === role);
-    if (!account) return { ok: false, error: "No account for that role." };
-    setUser(account.user);
-    return { ok: true };
+  const logout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
   };
-
-  const logout = () => setUser(null);
 
   return (
-    <AuthContext.Provider value={{ user, login, loginAs, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export function useAuth() {
+/**
+ * The JWT carries the profile metadata we set during seeding.
+ * Role comes from the token — the client never decides it.
+ */
+function profileFromSession(authUser) {
+  return {
+    id: authUser.id,
+    email: authUser.email,
+    name: authUser.user_metadata?.full_name || authUser.email,
+    role: authUser.user_metadata?.role || "student",
+  };
+}
+
+export const useAuth = () => {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
   return ctx;
-}
+};

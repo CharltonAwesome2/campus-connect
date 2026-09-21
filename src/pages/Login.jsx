@@ -1,45 +1,67 @@
+// src/pages/Login.jsx
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, Link } from "react-router";
 import ImageWithFallback from "@components/ImageWithFallback";
 import { useAuth } from "@context/AuthContext";
 import { accounts } from "@data/accounts";
 import styles from "./Login.module.css";
-import { Link } from "react-router";
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login, loginAs } = useAuth();
+  const { login, user } = useAuth();
 
   const [selectedRole, setSelectedRole] = useState("student");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const { user } = useAuth();
+  // Already logged in? Route away.
   useEffect(() => {
     if (user) navigate(`/${user.role}`, { replace: true });
   }, [user, navigate]);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
-    const result = login(email, password, selectedRole);
+    setSubmitting(true);
+
+    const result = await login(email, password);
+
     if (!result.ok) {
       setError(result.error);
+      setSubmitting(false);
       return;
     }
-    navigate(`/${selectedRole}`);
+
+    // The role comes from the JWT, not from the tab. If the user picked the
+    // wrong tab, tell them instead of silently routing them elsewhere.
+    if (result.user.role !== selectedRole) {
+      setError(
+        `This account is a ${result.user.role}. Please use the ${result.user.role} tab.`
+      );
+      setSubmitting(false);
+      return;
+    }
+
+    navigate(`/${result.user.role}`);
   };
 
-  const handleQuickLogin = (role) => {
+  const handleQuickLogin = async (account) => {
     setError("");
-    const result = loginAs(role);
+    setSubmitting(true);
+
+    const result = await login(account.email, account.password);
+
     if (!result.ok) {
       setError(result.error);
+      setSubmitting(false);
       return;
     }
-    navigate(`/${role}`);
+
+    setSelectedRole(result.user.role);
+    navigate(`/${result.user.role}`);
   };
 
   return (
@@ -55,7 +77,8 @@ export default function Login() {
           <div className={styles.leftInner}>
             <h1 className={styles.leftTitle}>Find Your Perfect Student Home</h1>
             <p className={styles.leftText}>
-              Connect with trusted landlords and discover amazing student housing opportunities near your campus
+              Connect with trusted landlords and discover amazing student housing
+              opportunities near your campus
             </p>
           </div>
         </div>
@@ -74,7 +97,10 @@ export default function Login() {
                 key={role}
                 type="button"
                 onClick={() => setSelectedRole(role)}
-                className={[styles.roleBtn, selectedRole === role ? styles.roleBtnActive : ""]
+                className={[
+                  styles.roleBtn,
+                  selectedRole === role ? styles.roleBtnActive : "",
+                ]
                   .filter(Boolean)
                   .join(" ")}
               >
@@ -95,6 +121,8 @@ export default function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
                 className={styles.fieldInput}
+                autoComplete="email"
+                required
               />
             </div>
 
@@ -109,17 +137,13 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 className={styles.fieldInput}
+                autoComplete="current-password"
+                required
               />
             </div>
 
             {error && (
-              <p
-                style={{
-                  color: "#dc2626",
-                  fontSize: 14,
-                  margin: 0,
-                }}
-              >
+              <p style={{ color: "#dc2626", fontSize: 14, margin: 0 }}>
                 {error}
               </p>
             )}
@@ -139,8 +163,12 @@ export default function Login() {
               </a>
             </div>
 
-            <button type="submit" className={styles.submitBtn}>
-              Login to Dashboard
+            <button
+              type="submit"
+              className={styles.submitBtn}
+              disabled={submitting}
+            >
+              {submitting ? "Logging in..." : "Login to Dashboard"}
             </button>
           </form>
 
@@ -162,7 +190,8 @@ export default function Login() {
                 <button
                   key={a.role}
                   type="button"
-                  onClick={() => handleQuickLogin(a.role)}
+                  onClick={() => handleQuickLogin(a)}
+                  disabled={submitting}
                   style={{
                     flex: 1,
                     padding: "8px 10px",
@@ -170,7 +199,8 @@ export default function Login() {
                     border: "1px solid #e5e7eb",
                     borderRadius: 6,
                     background: "#f9fafb",
-                    cursor: "pointer",
+                    cursor: submitting ? "not-allowed" : "pointer",
+                    textTransform: "capitalize",
                   }}
                 >
                   {a.role}
