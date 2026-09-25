@@ -23,7 +23,7 @@ export default function StudentDashboard() {
   const [priceFilter, setPriceFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
 
-  const myApplications = applications.filter((a) => a.studentId === user.id);;
+  const myApplications = applications.filter((a) => a.studentId === user.id);
 
   const handleApply = (residenceId) => {
     const residence = residences.find((r) => r.id === residenceId);
@@ -36,13 +36,7 @@ export default function StudentDashboard() {
     }
 
     addApplication({
-      id: `app-${Date.now()}`,
-      studentId: user.id,
-      studentName: user.name,
-      email: user.email,
-      phone: user.phone,
       residenceId: residence.id,
-      residenceName: residence.name,
       status: "pending",
       appliedDate: new Date().toISOString(),
     });

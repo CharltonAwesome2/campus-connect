@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import DashboardShell from "@components/DashboardShell";
 import StatCard from "@components/StatCard";
 import Card from "@components/Card";
@@ -7,14 +7,32 @@ import Badge from "@components/Badge";
 import Progress from "@components/Progress";
 import AllocationList from "@components/AllocationList";
 import TrendsChart from "@components/charts/TrendsChart";
-import OccupancyChart from "@components/charts/OccupancyChart";
+import ApplicationsByStatusChart from "@components/charts/ApplicationsByStatusChart";
 import StatusPie from "@components/charts/StatusPie";
 import TypeDistribution from "@components/charts/TypeDistribution";
 import { useData } from "@data/DataContext";
-import { Building2, FileText, TrendingUp, AlertCircle, CheckCircle, XCircle, Clock } from "lucide-react";
+import {
+  Building2,
+  FileText,
+  TrendingUp,
+  AlertCircle,
+  CheckCircle,
+  XCircle,
+  Clock,
+} from "lucide-react";
 import { motion } from "motion/react";
 import styles from "./AdminDashboard.module.css";
 import { useAuth } from "@context/AuthContext";
+
+const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+// "2026-01" → "Jan '26"
+function formatMonthLabel(key) {
+  const [year, month] = key.split("-");
+  const idx = Number(month) - 1;
+  if (idx < 0 || idx > 11) return key;
+  return `${MONTH_NAMES[idx]} '${year.slice(2)}`;
+}
 
 export default function AdminDashboard() {
   const { residences, applications, monthlyData } = useData();
@@ -24,20 +42,44 @@ export default function AdminDashboard() {
   const totalRooms = residences.reduce((sum, r) => sum + r.totalRooms, 0);
   const availableRooms = residences.reduce((sum, r) => sum + r.availableRooms, 0);
   const occupiedRooms = totalRooms - availableRooms;
-  const occupancyRate = totalRooms > 0 ? ((occupiedRooms / totalRooms) * 100).toFixed(1) : "0.0";
+  const occupancyRate =
+    totalRooms > 0 ? ((occupiedRooms / totalRooms) * 100).toFixed(1) : "0.0";
 
   const pendingApplications = applications.filter((a) => a.status === "pending").length;
   const approvedApplications = applications.filter((a) => a.status === "approved");
   const rejectedApplications = applications.filter((a) => a.status === "rejected").length;
 
-  const occupancyData = monthlyData.map((m) => ({
-    month: m.month,
-    occupancy: Number(occupancyRate),
-  }));
+  // Derived: applications per month, broken down by status.
+  // Computed from the same `applications` array the rest of the page uses,
+  // so it stays in sync with any status changes made elsewhere.
+  const statusOverTime = useMemo(() => {
+    const buckets = new Map();
+    applications.forEach((a) => {
+      const d = new Date(a.appliedDate);
+      if (Number.isNaN(d.getTime())) return;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      if (!buckets.has(key)) {
+        buckets.set(key, {
+          key,
+          month: formatMonthLabel(key),
+          approved: 0,
+          pending: 0,
+          rejected: 0,
+        });
+      }
+      const b = buckets.get(key);
+      if (b[a.status] !== undefined) b[a.status] += 1;
+    });
+    return [...buckets.values()].sort((a, b) => a.key.localeCompare(b.key));
+  }, [applications]);
 
   const alerts = residences
     .filter((r) => r.availableRooms === 0)
-    .map((r) => ({ id: r.id, name: r.name, message: "Fully occupied - no rooms available" }));
+    .map((r) => ({
+      id: r.id,
+      name: r.name,
+      message: "Fully occupied - no rooms available",
+    }));
 
   const applicationStatusData = [
     { name: "Approved", value: approvedApplications.length, color: "#10b981" },
@@ -80,7 +122,15 @@ export default function AdminDashboard() {
         className={styles.statsGrid}
       >
         {statCards.map(({ label, value, Icon, color, bg, progress }) => (
-          <StatCard key={label} label={label} value={value} Icon={Icon} color={color} bg={bg} progress={progress} />
+          <StatCard
+            key={label}
+            label={label}
+            value={value}
+            Icon={Icon}
+            color={color}
+            bg={bg}
+            progress={progress}
+          />
         ))}
       </motion.div>
 
@@ -118,7 +168,7 @@ export default function AdminDashboard() {
           active === "overview" ? (
             <div className={styles.chartsGrid}>
               <TrendsChart data={monthlyData} />
-              <OccupancyChart data={occupancyData} />
+              <ApplicationsByStatusChart data={statusOverTime} />
               <StatusPie data={applicationStatusData} />
               <TypeDistribution data={typeDistribution} />
             </div>
@@ -159,17 +209,24 @@ export default function AdminDashboard() {
                     {residences.map((residence) => {
                       const occupancy =
                         residence.totalRooms > 0
-                          ? ((residence.totalRooms - residence.availableRooms) / residence.totalRooms) * 100
+                          ? ((residence.totalRooms - residence.availableRooms) /
+                              residence.totalRooms) *
+                            100
                           : 0;
                       const badgeClass =
-                        occupancy >= 90 ? styles.badgeGreen : occupancy >= 70 ? styles.badgeBlue : styles.badgeYellow;
+                        occupancy >= 90
+                          ? styles.badgeGreen
+                          : occupancy >= 70
+                          ? styles.badgeBlue
+                          : styles.badgeYellow;
                       return (
                         <div key={residence.id} className={styles.performanceRow}>
                           <div className={styles.performanceHead}>
                             <div>
                               <p className={styles.performanceName}>{residence.name}</p>
                               <p className={styles.performanceMeta}>
-                                {residence.totalRooms - residence.availableRooms} / {residence.totalRooms} occupied
+                                {residence.totalRooms - residence.availableRooms} /{" "}
+                                {residence.totalRooms} occupied
                               </p>
                             </div>
                             <Badge className={badgeClass}>{occupancy.toFixed(0)}%</Badge>

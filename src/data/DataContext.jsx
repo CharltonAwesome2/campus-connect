@@ -1,5 +1,5 @@
 // src/data/DataContext.jsx
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { db } from "@lib/data";
 import { useAuth } from "@context/AuthContext";
 
@@ -9,6 +9,7 @@ export function DataProvider({ children }) {
   const [residences, setResidences] = useState([]);
   const [applications, setApplications] = useState([]);
   const [monthlyData, setMonthlyData] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { user } = useAuth();
@@ -21,6 +22,7 @@ export function DataProvider({ children }) {
       setResidences([]);
       setApplications([]);
       setMonthlyData([]);
+      setNotifications([]);
       setLoading(false);
       return;
     }
@@ -28,13 +30,23 @@ export function DataProvider({ children }) {
     async function load() {
       setLoading(true);
       try {
-        const [res, apps, monthly] = await Promise.all([db.getResidences(), db.getApplications(), db.getMonthlyData()]);
+        const [res, apps, monthly, notes] = await Promise.all([
+          db.getResidences(),
+          db.getApplications(),
+          db.getMonthlyData(),
+          db.getNotifications().catch((err) => {
+            console.error("[data] notifications fetch failed", err);
+            return [];
+          }),
+        ]);
         if (cancelled) return;
         setResidences(res);
         setApplications(apps);
         setMonthlyData(monthly);
+        setNotifications(notes);
       } catch (err) {
         console.error("Failed to load data", err);
+        if (!cancelled) setError(err);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -59,7 +71,6 @@ export function DataProvider({ children }) {
   const addApplication = async (application) => {
     const updated = await db.addApplication(application);
     setApplications(updated);
-    // Refresh monthly aggregates since application counts changed
     setMonthlyData(await db.getMonthlyData());
   };
 
@@ -68,18 +79,34 @@ export function DataProvider({ children }) {
     setApplications(updated);
   };
 
+  const markNotificationRead = async (id) => {
+    const updated = await db.markNotificationRead(id);
+    setNotifications(updated);
+  };
+
+  const markAllNotificationsRead = async () => {
+    const updated = await db.markAllNotificationsRead();
+    setNotifications(updated);
+  };
+
+  const unreadCount = useMemo(() => notifications.filter((n) => !n.isRead).length, [notifications]);
+
   return (
     <DataContext.Provider
       value={{
         residences,
         applications,
         monthlyData,
+        notifications,
+        unreadCount,
         loading,
         error,
         addResidence,
         removeResidence,
         addApplication,
         updateApplicationStatus,
+        markNotificationRead,
+        markAllNotificationsRead,
       }}
     >
       {children}

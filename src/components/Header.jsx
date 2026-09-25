@@ -2,6 +2,7 @@
 import { User, LogOut } from "lucide-react";
 import { useNavigate } from "react-router";
 import Button from "./Button";
+import NotificationBell from "./NotificationBell";
 import { useAuth } from "@context/AuthContext";
 import { publicUrl } from "@lib/assets";
 import styles from "./Header.module.css";
@@ -27,7 +28,11 @@ export default function Header({ role, userName = "User" }) {
       <div className={styles.inner}>
         <div className={styles.brand}>
           <div className={styles.logo}>
-            <img src={publicUrl("campus-connect.jpg")} alt="CampusConnect logo" className={styles.logoImg} />
+            <img
+              src={publicUrl("campus-connect.jpg")}
+              alt="CampusConnect logo"
+              className={styles.logoImg}
+            />
           </div>
           <div>
             <h1 className={styles.title}>CampusConnect</h1>
@@ -36,6 +41,7 @@ export default function Header({ role, userName = "User" }) {
         </div>
 
         <div className={styles.right}>
+          {role !== "admin" && <NotificationBell />}
           <div className={styles.user}>
             <div className={styles.avatar}>
               <User size={16} color="#4b5563" />
