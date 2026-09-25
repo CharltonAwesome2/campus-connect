@@ -1,4 +1,4 @@
-import Card from "@components/Card";
+import Card from "@/components/card/Card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import styles from "./TrendsChart.module.css";
 import { tooltipContentStyle } from "@data/chartStyles";

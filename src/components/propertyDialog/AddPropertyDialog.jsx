@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import Dialog from '@components/Dialog';
-import Input from '@components/Input';
-import Label from '@components/Label';
-import Select from '@components/Select';
-import Button from '@components/Button';
+import Dialog from '@/components/dialog/Dialog';
+import Input from '@/components/input/Input';
+import Label from '@/components/label/Label';
+import Select from '@/components/select/Select';
+import Button from '@/components/button/Button';
 import styles from './AddPropertyDialog.module.css';
 import { roomTypeOptions } from '@data/options';
 

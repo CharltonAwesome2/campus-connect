@@ -1,5 +1,5 @@
 // src/lib/data/index.js
-import { DATA_SOURCE } from "@/config";
+import { DATA_SOURCE } from "@/assets/jsFiles/config";
 import { localStorageRepo } from "./localStorageRepo";
 import { supabaseRepo } from "./supabaseRepo";
 

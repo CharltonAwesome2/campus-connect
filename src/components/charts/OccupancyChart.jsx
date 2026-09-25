@@ -1,4 +1,4 @@
-import Card from "@components/Card";
+import Card from "@/components/card/Card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import styles from "./OccupancyChart.module.css";
 import { tooltipContentStyle } from "@data/chartStyles";

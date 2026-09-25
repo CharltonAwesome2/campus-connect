@@ -1,9 +1,9 @@
 // src/pages/Login.jsx
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router";
-import ImageWithFallback from "@components/ImageWithFallback";
+import ImageWithFallback from "@/components/imageWithFallBack/ImageWithFallback";
 import { useAuth } from "@context/AuthContext";
-import { accounts } from "@data/accounts";
+import { accounts } from "@/assets/jsFiles/accounts";
 import styles from "./Login.module.css";
 
 export default function Login() {

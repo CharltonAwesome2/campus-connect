@@ -1,5 +1,5 @@
-import Card from './Card';
-import Progress from './Progress';
+import Card from '../card/Card';
+import Progress from '../progress/Progress';
 import styles from './StatCard.module.css';
 
 export default function StatCard({ label, value, Icon, color, bg, progress }) {
