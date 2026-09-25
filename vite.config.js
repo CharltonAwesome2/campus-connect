@@ -16,7 +16,7 @@ export default defineConfig({
       "@styles": fileURLToPath(new URL("./src/styles", import.meta.url)),
       "@hooks": fileURLToPath(new URL("./src/hooks", import.meta.url)),
       "@lib": fileURLToPath(new URL("./src/lib", import.meta.url)),
-      "@assets": fileURLToPath(new URL("./src/assets", import.meta.url)),
+      "@assets": fileURLToPath(new URL("./src/assets/images", import.meta.url)),
     },
   },
   build: { outDir: "dist", assetsDir: "assets" },

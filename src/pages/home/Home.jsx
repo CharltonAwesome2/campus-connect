@@ -1,7 +1,7 @@
 // src/pages/Home.jsx
 import { Building2, User, Shield, Check, Scale, Zap } from "lucide-react";
-import Card from "@components/Card";
-import Button from "@components/Button";
+import Card from "@/components/card/Card";
+import Button from "@/components/button/Button";
 import { useNavigate } from "react-router";
 import { motion } from "motion/react";
 import { publicUrl } from "@lib/assets";

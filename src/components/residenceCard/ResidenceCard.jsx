@@ -1,7 +1,7 @@
 import { MapPin, Users, Wifi, Car, Utensils, Dumbbell, Check } from 'lucide-react';
-import Button from './Button';
-import Card from './Card';
-import Badge from './Badge';
+import Button from '../button/Button';
+import Card from '../card/Card';
+import Badge from '../badge/Badge';
 import styles from './ResidenceCard.module.css';
 
 function AmenityIcon({ amenity }) {

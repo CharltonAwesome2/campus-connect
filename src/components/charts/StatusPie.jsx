@@ -1,4 +1,4 @@
-import Card from '@components/Card';
+import Card from '@/components/card/Card';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import styles from './StatusPie.module.css';
 

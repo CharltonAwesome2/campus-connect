@@ -1,5 +1,5 @@
-import Card from '@components/Card';
-import Badge from '@components/Badge';
+import Card from '@/components/card/Card';
+import Badge from '@/components/badge/Badge';
 import styles from './AllocationList.module.css';
 
 export default function AllocationList({ title, applications, badgeClass, avatarClass, label }) {

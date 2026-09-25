@@ -9,7 +9,7 @@
       "@styles/*": ["./src/styles/*"],
       "@hooks/*": ["./src/hooks/*"],
       "@lib/*": ["./src/lib/*"],
-      "@assets/*": ["./src/assets/*"]
+      "@assets/*": ["./src/assets/images/*"]
     },
     "module": "ESNext",
     "target": "ESNext",

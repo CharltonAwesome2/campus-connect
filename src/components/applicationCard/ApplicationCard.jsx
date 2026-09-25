@@ -1,7 +1,7 @@
 import { Calendar, Mail, Phone, CheckCircle, XCircle, Clock } from 'lucide-react';
-import Button from './Button';
-import Card from './Card';
-import Badge from './Badge';
+import Button from '../button/Button';
+import Card from '../card/Card';
+import Badge from '../badge/Badge';
 import styles from './ApplicationCard.module.css';
 
 function StatusBadge({ status }) {

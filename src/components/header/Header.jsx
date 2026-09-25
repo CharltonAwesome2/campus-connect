@@ -1,7 +1,7 @@
 // src/components/Header.jsx
 import { User, LogOut } from "lucide-react";
 import { useNavigate } from "react-router";
-import Button from "./Button";
+import Button from "../button/Button";
 import { useAuth } from "@context/AuthContext";
 import { publicUrl } from "@lib/assets";
 import styles from "./Header.module.css";
