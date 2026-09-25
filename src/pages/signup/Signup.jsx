@@ -1,9 +1,9 @@
 // src/pages/Signup.jsx
 import { useState } from "react";
 import { useNavigate, Link } from "react-router";
-import ImageWithFallback from "@components/ImageWithFallback";
+import ImageWithFallback from "@components/imageWithFallback/ImageWithFallback";
 import { useAuth } from "@context/AuthContext";
-import styles from "./Login.module.css";
+import styles from "../login/Login.module.css";
 
 export default function Signup() {
   const navigate = useNavigate();

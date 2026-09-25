@@ -1,6 +1,6 @@
 import { RouterProvider } from "react-router";
 import { router } from "./Routes";
-import Sonner from "@components/Sonner";
+import Sonner from "@components/sonner/Sonner";
 import { DataProvider } from "@data/DataContext";
 import { AuthProvider } from "@context/AuthContext";
 
