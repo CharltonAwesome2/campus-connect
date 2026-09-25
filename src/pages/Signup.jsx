@@ -1,12 +1,13 @@
+// src/pages/Signup.jsx
 import { useState } from "react";
 import { useNavigate, Link } from "react-router";
 import ImageWithFallback from "@components/ImageWithFallback";
 import { useAuth } from "@context/AuthContext";
-import styles from "./Login.module.css"; // reuse the same styles
+import styles from "./Login.module.css";
 
 export default function Signup() {
   const navigate = useNavigate();
-  const { loginAs } = useAuth(); // we only use quick-login for now
+  const { signup } = useAuth();
 
   const [role, setRole] = useState("student");
   const [fullName, setFullName] = useState("");
@@ -15,8 +16,9 @@ export default function Signup() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
@@ -36,18 +38,35 @@ export default function Signup() {
       return;
     }
 
-    // For now we just show a success message.
-    // Later this will call supabase.auth.signUp()
-    setSuccess(
-      `Account created successfully as ${role}! You can now log in.`
-    );
+    setSubmitting(true);
+    const result = await signup({ email, password, fullName, role });
+    setSubmitting(false);
 
-    // Optional: clear the form
-    setFullName("");
-    setEmail("");
-    setPassword("");
-    setConfirmPassword("");
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+
+    if (result.needsConfirmation) {
+      setSuccess(
+        "Account created. Check your email to confirm, then log in."
+      );
+      setFullName("");
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+      return;
+    }
+
+    // Session is live — straight to the dashboard.
+    navigate(`/${result.user.role}`);
   };
+
+  const nameLabel = role === "landlord" ? "Company Name" : "Full Name";
+  const namePlaceholder =
+    role === "landlord"
+      ? "Enter your company name"
+      : "Enter your full name";
 
   return (
     <div className={styles.page}>
@@ -63,7 +82,8 @@ export default function Signup() {
           <div className={styles.leftInner}>
             <h1 className={styles.leftTitle}>Join Campus Connect</h1>
             <p className={styles.leftText}>
-              Create an account to find student housing or list your properties.
+              Create an account to find student housing or list your
+              properties.
             </p>
           </div>
         </div>
@@ -84,6 +104,7 @@ export default function Signup() {
                 key={r}
                 type="button"
                 onClick={() => setRole(r)}
+                disabled={submitting}
                 className={[
                   styles.roleBtn,
                   role === r ? styles.roleBtnActive : "",
@@ -98,13 +119,14 @@ export default function Signup() {
 
           <form onSubmit={handleSubmit} className={styles.formBody}>
             <div className={styles.field}>
-              <label className={styles.fieldLabel}>Full Name</label>
+              <label className={styles.fieldLabel}>{nameLabel}</label>
               <input
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="Enter your full name"
+                placeholder={namePlaceholder}
                 className={styles.fieldInput}
+                disabled={submitting}
               />
             </div>
 
@@ -116,6 +138,8 @@ export default function Signup() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
                 className={styles.fieldInput}
+                autoComplete="email"
+                disabled={submitting}
               />
             </div>
 
@@ -127,6 +151,8 @@ export default function Signup() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Create a password"
                 className={styles.fieldInput}
+                autoComplete="new-password"
+                disabled={submitting}
               />
             </div>
 
@@ -138,6 +164,8 @@ export default function Signup() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirm your password"
                 className={styles.fieldInput}
+                autoComplete="new-password"
+                disabled={submitting}
               />
             </div>
 
@@ -153,8 +181,12 @@ export default function Signup() {
               </p>
             )}
 
-            <button type="submit" className={styles.submitBtn}>
-              Create Account
+            <button
+              type="submit"
+              className={styles.submitBtn}
+              disabled={submitting}
+            >
+              {submitting ? "Creating account..." : "Create Account"}
             </button>
           </form>
 

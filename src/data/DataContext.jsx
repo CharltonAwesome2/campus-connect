@@ -16,22 +16,25 @@ export function DataProvider({ children }) {
   useEffect(() => {
     let cancelled = false;
 
+    // No user → clear data, don't fetch
+    if (!user) {
+      setResidences([]);
+      setApplications([]);
+      setMonthlyData([]);
+      setLoading(false);
+      return;
+    }
+
     async function load() {
       setLoading(true);
-      setError(null);
       try {
-        const [res, apps, monthly] = await Promise.all([
-          db.getResidences(),
-          db.getApplications(),
-          db.getMonthlyData(),
-        ]);
+        const [res, apps, monthly] = await Promise.all([db.getResidences(), db.getApplications(), db.getMonthlyData()]);
         if (cancelled) return;
         setResidences(res);
         setApplications(apps);
         setMonthlyData(monthly);
       } catch (err) {
         console.error("Failed to load data", err);
-        if (!cancelled) setError(err);
       } finally {
         if (!cancelled) setLoading(false);
       }

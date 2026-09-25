@@ -17,8 +17,8 @@ export default function Header({ role, userName = "User" }) {
       admin: "Admin Dashboard",
     }[role] || "";
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate("/", { replace: true });
   };
 
@@ -27,11 +27,7 @@ export default function Header({ role, userName = "User" }) {
       <div className={styles.inner}>
         <div className={styles.brand}>
           <div className={styles.logo}>
-            <img
-              src={publicUrl("campus-connect.jpg")}
-              alt="CampusConnect logo"
-              className={styles.logoImg}
-            />
+            <img src={publicUrl("campus-connect.jpg")} alt="CampusConnect logo" className={styles.logoImg} />
           </div>
           <div>
             <h1 className={styles.title}>CampusConnect</h1>

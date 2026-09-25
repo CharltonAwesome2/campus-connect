@@ -95,3 +95,6 @@ jspm_packages/
 
 # Figma specific
 *.figma.html
+
+# Personal notes and documents
+docs/
