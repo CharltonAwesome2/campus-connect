@@ -1,0 +1,65 @@
+.title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--foreground, #111827);
+  margin-bottom: 0.25rem;
+}
+
+.subtitle {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground, #6b7280);
+  margin-bottom: 0.5rem;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.textarea {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border, #d1d5db);
+  border-radius: 0.5rem;
+  background: var(--input-background, #fff);
+  color: var(--foreground, #111827);
+  font-size: 0.875rem;
+  font-family: inherit;
+  outline: none;
+  resize: vertical;
+  min-height: 5rem;
+}
+
+.textarea::placeholder {
+  color: var(--muted-foreground, #6b7280);
+}
+
+.textarea:focus {
+  border-color: var(--ring, #2563eb);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.cancelBtn {
+  background: transparent;
+  color: var(--foreground, #111827);
+  border-color: var(--border, #d1d5db);
+}
+
+.submitBtn {
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+}
+
+.submitBtn:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}

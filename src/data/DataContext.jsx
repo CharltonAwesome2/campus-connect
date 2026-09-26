@@ -10,6 +10,7 @@ export function DataProvider({ children }) {
   const [applications, setApplications] = useState([]);
   const [monthlyData, setMonthlyData] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [amenities, setAmenities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { user } = useAuth();
@@ -23,6 +24,7 @@ export function DataProvider({ children }) {
       setApplications([]);
       setMonthlyData([]);
       setNotifications([]);
+      setAmenities([]);
       setLoading(false);
       return;
     }
@@ -30,12 +32,16 @@ export function DataProvider({ children }) {
     async function load() {
       setLoading(true);
       try {
-        const [res, apps, monthly, notes] = await Promise.all([
+        const [res, apps, monthly, notes, amenityList] = await Promise.all([
           db.getResidences(),
           db.getApplications(),
           db.getMonthlyData(),
           db.getNotifications().catch((err) => {
             console.error("[data] notifications fetch failed", err);
+            return [];
+          }),
+          db.getAmenities().catch((err) => {
+            console.error("[data] amenities fetch failed", err);
             return [];
           }),
         ]);
@@ -44,6 +50,7 @@ export function DataProvider({ children }) {
         setApplications(apps);
         setMonthlyData(monthly);
         setNotifications(notes);
+        setAmenities(amenityList);
       } catch (err) {
         console.error("Failed to load data", err);
         if (!cancelled) setError(err);
@@ -89,6 +96,11 @@ export function DataProvider({ children }) {
     setNotifications(updated);
   };
 
+  const updateResidence = async (id, patch) => {
+    const updated = await db.updateResidence(id, patch);
+    setResidences(updated);
+  };
+
   const unreadCount = useMemo(() => notifications.filter((n) => !n.isRead).length, [notifications]);
 
   return (
@@ -98,10 +110,12 @@ export function DataProvider({ children }) {
         applications,
         monthlyData,
         notifications,
+        amenities,
         unreadCount,
         loading,
         error,
         addResidence,
+        updateResidence,
         removeResidence,
         addApplication,
         updateApplicationStatus,

@@ -16,6 +16,7 @@ import styles from "./LandlordDashboard.module.css";
 import { useAuth } from "@context/AuthContext";
 
 export default function LandlordDashboard() {
+  const [editingResidence, setEditingResidence] = useState(null);
   const { residences, applications, addResidence, removeResidence, updateApplicationStatus } = useData();
   const { user } = useAuth();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -25,7 +26,7 @@ export default function LandlordDashboard() {
   const landlordApplications = user?.landlordId
     ? applications.filter((a) => landlordResidences.some((r) => r.id === a.residenceId))
     : [];
-    
+
   const handleApprove = (applicationId) => {
     const application = applications.find((a) => a.id === applicationId);
     updateApplicationStatus(applicationId, "approved");
@@ -44,13 +45,19 @@ export default function LandlordDashboard() {
 
   const handleEdit = (residenceId) => {
     const residence = residences.find((r) => r.id === residenceId);
-    toast.info(`Editing ${residence?.name}`);
+    if (residence) setEditingResidence(residence);
   };
 
-  const handleDelete = (residenceId) => {
+  const handleDelete = async (residenceId) => {
     const residence = residences.find((r) => r.id === residenceId);
-    removeResidence(residenceId);
-    toast.success(`${residence?.name} removed from listings`);
+    if (!window.confirm(`Remove ${residence?.name}?`)) return;
+    try {
+      await removeResidence(residenceId);
+      toast.success(`${residence?.name} removed from listings`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to remove property");
+    }
   };
 
   const handleAddProperty = (data) => {
@@ -58,18 +65,37 @@ export default function LandlordDashboard() {
       toast.error("Please fill in name, price, and total rooms.");
       return;
     }
+
+    if (editingResidence) {
+      updateResidence(editingResidence.id, {
+        name: data.name,
+        address: data.address,
+        description: data.description,
+        distanceKm: data.distanceKm,
+        price: data.price,
+        type: data.type,
+        totalRooms: data.totalRooms,
+        availableRooms: data.availableRooms,
+        amenityIds: data.amenityIds,
+      });
+      toast.success("Property updated successfully!");
+      setEditingResidence(null);
+      setIsAddDialogOpen(false);
+      return;
+    }
+
     addResidence({
-      landlordId: user.landlordId, // was user.id — this was wrong too
+      landlordId: user.landlordId,
       name: data.name,
-      address: data.address || "—",
-      description: data.description || "",
+      address: data.address,
+      description: data.description,
       image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=800",
-      distanceKm: data.distance ?? 0, // DB expects distanceKm
+      distanceKm: data.distanceKm,
       price: data.price,
       type: data.type,
       totalRooms: data.totalRooms,
-      availableRooms: data.totalRooms,
-      amenities: [],
+      availableRooms: data.availableRooms || data.totalRooms,
+      amenityIds: data.amenityIds,
     });
     toast.success("New property added successfully!");
     setIsAddDialogOpen(false);
@@ -190,9 +216,13 @@ export default function LandlordDashboard() {
       </Tabs>
 
       <AddPropertyDialog
-        open={isAddDialogOpen}
-        onClose={() => setIsAddDialogOpen(false)}
+        open={isAddDialogOpen || !!editingResidence}
+        onClose={() => {
+          setIsAddDialogOpen(false);
+          setEditingResidence(null);
+        }}
         onSubmit={handleAddProperty}
+        initialData={editingResidence}
       />
     </DashboardShell>
   );
