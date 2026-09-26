@@ -1,4 +1,4 @@
-import { Calendar, Mail, Phone, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Calendar, Mail, Phone, CheckCircle, XCircle, Clock, FileText, CalendarDays } from 'lucide-react';
 import Button from '@components/button/Button';
 import Card from '@components/card/Card';
 import Badge from '@components/badge/Badge';
@@ -60,7 +60,23 @@ export default function ApplicationCard({ application, showActions = false, onAp
             <Calendar size={14} />
             <span>Applied on {new Date(application.appliedDate).toLocaleDateString()}</span>
           </div>
+          {application.moveInDate && (
+            <div className={styles.detail}>
+              <CalendarDays size={14} />
+              <span>Preferred move-in: {new Date(application.moveInDate).toLocaleDateString()}</span>
+            </div>
+          )}
         </div>
+
+        {application.notes && (
+          <div className={styles.notes}>
+            <div className={styles.notesHead}>
+              <FileText size={14} />
+              <span>Motivation</span>
+            </div>
+            <p className={styles.notesBody}>{application.notes}</p>
+          </div>
+        )}
 
         {showActions && application.status === 'pending' && (
           <div className={styles.actions}>

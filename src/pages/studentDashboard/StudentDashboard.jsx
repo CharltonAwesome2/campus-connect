@@ -2,6 +2,7 @@ import { useState } from "react";
 import DashboardShell from "@components/dashboardShell/DashboardShell";
 import ResidenceCard from "@components/residenceCard/ResidenceCard";
 import ApplicationCard from "@components/applicationCard/ApplicationCard";
+import ApplicationDialog from "@components/applicationDialog/ApplicationDialog";
 import StatCard from "@components/statCard/StatCard";
 import EmptyState from "@components/emptyState/EmptyState";
 import Card from "@components/card/Card";
@@ -22,8 +23,9 @@ export default function StudentDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [priceFilter, setPriceFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [applyTarget, setApplyTarget] = useState(null);
 
-  const myApplications = applications.filter((a) => a.studentId === user.id);
+  const myApplications = applications.filter((a) => a.studentUserId === user.id);
 
   const handleApply = (residenceId) => {
     const residence = residences.find((r) => r.id === residenceId);
@@ -34,16 +36,20 @@ export default function StudentDashboard() {
       toast.error("You already applied for this residence.");
       return;
     }
+    setApplyTarget(residence);
+  };
 
-    addApplication({
-      residenceId: residence.id,
-      status: "pending",
-      appliedDate: new Date().toISOString(),
-    });
-
-    toast.success(`Application submitted for ${residence.name}!`, {
-      description: "You will be notified once your application is reviewed.",
-    });
+  const handleSubmitApplication = async (payload) => {
+    try {
+      await addApplication(payload);
+      toast.success(`Application submitted for ${applyTarget.name}!`, {
+        description: "You will be notified once your application is reviewed.",
+      });
+      setApplyTarget(null);
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || "Failed to submit application");
+    }
   };
 
   const filteredResidences = residences.filter((residence) => {
@@ -176,6 +182,12 @@ export default function StudentDashboard() {
           )
         }
       </Tabs>
+      <ApplicationDialog
+        open={!!applyTarget}
+        residence={applyTarget}
+        onClose={() => setApplyTarget(null)}
+        onSubmit={handleSubmitApplication}
+      />
     </DashboardShell>
   );
 }

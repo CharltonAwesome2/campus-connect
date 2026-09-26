@@ -37,7 +37,7 @@ export const supabaseRepo = {
         type,
         landlord_id,
         residence_amenities (
-          amenities ( name )
+          amenities ( id, name )
         )
       `,
       )
@@ -58,31 +58,32 @@ export const supabaseRepo = {
       type: r.type,
       landlordId: r.landlord_id,
       amenities: (r.residence_amenities || []).map((ra) => ra.amenities?.name).filter(Boolean),
+      amenityIds: (r.residence_amenities || [])
+        .map((ra) => ra.amenities?.id) // needs amenities(id, name) in the select
+        .filter((x) => x != null),
     }));
   },
 
   async getApplications() {
     const { data, error } = await supabase.from("applications").select(`
-        id,
-        status,
-        applied_date,
-        students (
-          id,
-          profiles ( full_name, email, phone )
-        ),
-        residences ( id, name )
-      `);
+  id, status, applied_date, notes, move_in_date,
+  students ( id, user_id, profiles ( full_name, email, phone ) ),
+  residences ( id, name )
+`);
 
     if (error) throw error;
 
     return (data || []).map((a) => ({
       id: a.id,
       studentId: a.students?.id,
+      studentUserId: a.students?.user_id,
       studentName: a.students?.profiles?.full_name,
       residenceId: a.residences?.id,
       residenceName: a.residences?.name,
       status: a.status,
       appliedDate: a.applied_date,
+      notes: a.notes,
+      moveInDate: a.move_in_date,
       email: a.students?.profiles?.email,
       phone: a.students?.profiles?.phone,
     }));
@@ -175,19 +176,49 @@ export const supabaseRepo = {
       residence_id: application.residenceId,
       status: application.status || "pending",
       applied_date: application.appliedDate || new Date().toISOString().slice(0, 10),
+      notes: application.notes ?? null,
+      move_in_date: application.moveInDate ?? null, // omit if you skipped the column
     });
 
     if (error) throw error;
+
+    const { data: residenceRow } = await supabase
+      .from("residences")
+      .select("name, landlords ( user_id )")
+      .eq("id", application.residenceId)
+      .single();
+
+    if (residenceRow?.landlords?.user_id) {
+      await supabase.from("notifications").insert({
+        user_id: residenceRow.landlords.user_id,
+        title: "New application received",
+        body: `A student applied for ${residenceRow.name}.`,
+        link: "/landlord/applications",
+      });
+    }
     return this.getApplications();
   },
 
   async updateApplicationStatus(id, status) {
     const { error } = await supabase.from("applications").update({ status }).eq("id", id);
+    if (error) throw error; // ← throw immediately
 
-    if (error) throw error;
+    const { data: appRow } = await supabase
+      .from("applications")
+      .select("students ( user_id ), residences ( name )")
+      .eq("id", id)
+      .single();
+
+    if (appRow?.students?.user_id) {
+      await supabase.from("notifications").insert({
+        user_id: appRow.students.user_id,
+        title: status === "approved" ? "Application approved" : "Application rejected",
+        body: `${appRow.residences?.name}: your application was ${status}.`,
+        link: "/student",
+      });
+    }
     return this.getApplications();
   },
-
   // -------------------------------------------------------------------------
   // Notifications
   // -------------------------------------------------------------------------
@@ -237,5 +268,77 @@ export const supabaseRepo = {
 
     if (error) throw error;
     return this.getNotifications();
+  },
+
+  // ---------- Amenities catalog ----------
+  async getAmenities() {
+    const { data, error } = await supabase.from("amenities").select("id, name, icon").order("name");
+    if (error) throw error;
+    return data || [];
+  },
+
+  // ---------- Add ----------
+  async addResidence(residence) {
+    const { data, error } = await supabase
+      .from("residences")
+      .insert({
+        name: residence.name,
+        address: residence.address,
+        description: residence.description,
+        image_url: residence.image,
+        price: residence.price,
+        distance_km: residence.distanceKm,
+        available_rooms: residence.availableRooms,
+        total_rooms: residence.totalRooms,
+        type: residence.type,
+        landlord_id: residence.landlordId,
+      })
+      .select("id")
+      .single();
+    if (error) throw error;
+
+    // Write the join rows if any amenities were picked
+    if (residence.amenityIds?.length) {
+      const rows = residence.amenityIds.map((amenity_id) => ({
+        residence_id: data.id,
+        amenity_id,
+      }));
+      const { error: joinErr } = await supabase.from("residence_amenities").insert(rows);
+      if (joinErr) throw joinErr;
+    }
+
+    return this.getResidences();
+  },
+
+  // ---------- Update ----------
+  async updateResidence(id, patch) {
+    const { error } = await supabase
+      .from("residences")
+      .update({
+        name: patch.name,
+        address: patch.address,
+        description: patch.description,
+        price: patch.price,
+        distance_km: patch.distanceKm,
+        available_rooms: patch.availableRooms,
+        total_rooms: patch.totalRooms,
+        type: patch.type,
+      })
+      .eq("id", id);
+    if (error) throw error;
+
+    // Amenities: wipe + reinsert (simplest correct approach; small N)
+    if (patch.amenityIds) {
+      const { error: delErr } = await supabase.from("residence_amenities").delete().eq("residence_id", id);
+      if (delErr) throw delErr;
+
+      if (patch.amenityIds.length) {
+        const rows = patch.amenityIds.map((amenity_id) => ({ residence_id: id, amenity_id }));
+        const { error: insErr } = await supabase.from("residence_amenities").insert(rows);
+        if (insErr) throw insErr;
+      }
+    }
+
+    return this.getResidences();
   },
 };
