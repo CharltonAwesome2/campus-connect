@@ -1,11 +1,22 @@
-import { Calendar, Mail, Phone, CheckCircle, XCircle, Clock, FileText, CalendarDays, Receipt } from 'lucide-react';
-import Button from '@components/button/Button';
-import Card from '@components/card/Card';
-import Badge from '@components/badge/Badge';
-import styles from './ApplicationCard.module.css';
+import {
+  Calendar,
+  Mail,
+  Phone,
+  CheckCircle,
+  XCircle,
+  Clock,
+  FileText,
+  CalendarDays,
+  Receipt,
+  Star,
+} from "lucide-react";
+import Button from "@components/button/Button";
+import Card from "@components/card/Card";
+import Badge from "@components/badge/Badge";
+import styles from "./ApplicationCard.module.css";
 
 function StatusBadge({ status }) {
-  if (status === 'approved') {
+  if (status === "approved") {
     return (
       <Badge className={styles.badgeApproved}>
         <CheckCircle size={14} />
@@ -13,7 +24,7 @@ function StatusBadge({ status }) {
       </Badge>
     );
   }
-  if (status === 'rejected') {
+  if (status === "rejected") {
     return (
       <Badge className={styles.badgeRejected}>
         <XCircle size={14} />
@@ -35,6 +46,8 @@ export default function ApplicationCard({
   onApprove,
   onReject,
   onRequestPayment,
+  onLeaveReview,
+  myReview,
 }) {
   return (
     <Card className={styles.card}>
@@ -42,9 +55,7 @@ export default function ApplicationCard({
         <div className={styles.head}>
           <div>
             <h3 className={styles.name}>{application.residenceName}</h3>
-            {showActions && (
-              <p className={styles.student}>{application.studentName}</p>
-            )}
+            {showActions && <p className={styles.student}>{application.studentName}</p>}
           </div>
           <StatusBadge status={application.status} />
         </div>
@@ -84,7 +95,7 @@ export default function ApplicationCard({
           </div>
         )}
 
-        {showActions && application.status === 'pending' && (
+        {showActions && application.status === "pending" && (
           <div className={styles.actions}>
             <Button className={styles.approveBtn} onClick={() => onApprove?.(application.id)}>
               <CheckCircle size={16} />
@@ -97,14 +108,19 @@ export default function ApplicationCard({
           </div>
         )}
 
-        {showActions && application.status === 'approved' && onRequestPayment && (
+        {showActions && application.status === "approved" && onRequestPayment && (
           <div className={styles.actions}>
-            <Button
-              className={styles.requestPaymentBtn}
-              onClick={() => onRequestPayment(application)}
-            >
+            <Button className={styles.requestPaymentBtn} onClick={() => onRequestPayment(application)}>
               <Receipt size={16} />
               Request Payment
+            </Button>
+          </div>
+        )}
+        {!showActions && application.status === "approved" && onLeaveReview && (
+          <div className={styles.actions}>
+            <Button className={styles.reviewBtn} onClick={() => onLeaveReview(application)}>
+              <Star size={16} />
+              {myReview ? "Edit review" : "Leave a review"}
             </Button>
           </div>
         )}
