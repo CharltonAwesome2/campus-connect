@@ -10,6 +10,7 @@ export function DataProvider({ children }) {
   const [applications, setApplications] = useState([]);
   const [monthlyData, setMonthlyData] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [amenities, setAmenities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -24,6 +25,7 @@ export function DataProvider({ children }) {
       setApplications([]);
       setMonthlyData([]);
       setNotifications([]);
+      setPayments([]);
       setAmenities([]);
       setLoading(false);
       return;
@@ -32,12 +34,16 @@ export function DataProvider({ children }) {
     async function load() {
       setLoading(true);
       try {
-        const [res, apps, monthly, notes, amenityList] = await Promise.all([
+        const [res, apps, monthly, notes, pays, amenityList] = await Promise.all([
           db.getResidences(),
           db.getApplications(),
           db.getMonthlyData(),
           db.getNotifications().catch((err) => {
             console.error("[data] notifications fetch failed", err);
+            return [];
+          }),
+          db.getPayments().catch((err) => {
+            console.error("[data] payments fetch failed", err);
             return [];
           }),
           db.getAmenities().catch((err) => {
@@ -50,6 +56,7 @@ export function DataProvider({ children }) {
         setApplications(apps);
         setMonthlyData(monthly);
         setNotifications(notes);
+        setPayments(pays);
         setAmenities(amenityList);
       } catch (err) {
         console.error("Failed to load data", err);
@@ -75,6 +82,11 @@ export function DataProvider({ children }) {
     setResidences(updated);
   };
 
+  const updateResidence = async (id, patch) => {
+    const updated = await db.updateResidence(id, patch);
+    setResidences(updated);
+  };
+
   const addApplication = async (application) => {
     const updated = await db.addApplication(application);
     setApplications(updated);
@@ -84,6 +96,9 @@ export function DataProvider({ children }) {
   const updateApplicationStatus = async (id, status) => {
     const updated = await db.updateApplicationStatus(id, status);
     setApplications(updated);
+    // Approval can create a payment and decrement rooms, so refresh both.
+    setPayments(await db.getPayments());
+    setResidences(await db.getResidences());
   };
 
   const markNotificationRead = async (id) => {
@@ -96,9 +111,14 @@ export function DataProvider({ children }) {
     setNotifications(updated);
   };
 
-  const updateResidence = async (id, patch) => {
-    const updated = await db.updateResidence(id, patch);
-    setResidences(updated);
+  const processPayment = async (id, method = "eft") => {
+    const updated = await db.processPayment(id, method);
+    setPayments(updated);
+  };
+
+  const createPaymentRequest = async (payload) => {
+    const updated = await db.createPaymentRequest(payload);
+    setPayments(updated);
   };
 
   const unreadCount = useMemo(() => notifications.filter((n) => !n.isRead).length, [notifications]);
@@ -111,9 +131,12 @@ export function DataProvider({ children }) {
         monthlyData,
         notifications,
         amenities,
-        unreadCount,
+        unreadCount, 
         loading,
         error,
+        payments,
+        processPayment,
+        createPaymentRequest,
         addResidence,
         updateResidence,
         removeResidence,

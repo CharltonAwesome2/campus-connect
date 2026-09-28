@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import DashboardShell from "@components/dashboardShell/DashboardShell";
 import ResidenceCard from "@components/residenceCard/ResidenceCard";
 import ApplicationCard from "@components/applicationCard/ApplicationCard";
 import ApplicationDialog from "@components/applicationDialog/ApplicationDialog";
+import PaymentsTab from "@components/paymentsTab/PaymentsTab";
 import StatCard from "@components/statCard/StatCard";
 import EmptyState from "@components/emptyState/EmptyState";
 import Card from "@components/card/Card";
@@ -10,7 +11,7 @@ import Tabs from "@components/tabs/Tabs";
 import Input from "@components/input/Input";
 import Select from "@components/select/Select";
 import { useData } from "@data/DataContext";
-import { Search, Building2, FileText, CheckCircle, Clock, XCircle } from "lucide-react";
+import { Search, Building2, FileText, CheckCircle, Clock, XCircle, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "motion/react";
 import styles from "./StudentDashboard.module.css";
@@ -18,7 +19,7 @@ import { useAuth } from "@context/AuthContext";
 import { priceOptions, typeOptions } from "@data/options";
 
 export default function StudentDashboard() {
-  const { residences, applications, addApplication } = useData();
+  const { residences, applications, addApplication, payments, processPayment } = useData();
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [priceFilter, setPriceFilter] = useState("all");
@@ -26,6 +27,9 @@ export default function StudentDashboard() {
   const [applyTarget, setApplyTarget] = useState(null);
 
   const myApplications = applications.filter((a) => a.studentUserId === user.id);
+  const myPayments = payments.filter((p) => p.studentUserId === user.id);
+
+  const appliedResidenceIds = useMemo(() => new Set(myApplications.map((a) => a.residenceId)), [myApplications]);
 
   const handleApply = (residenceId) => {
     const residence = residences.find((r) => r.id === residenceId);
@@ -94,6 +98,14 @@ export default function StudentDashboard() {
         </>
       ),
     },
+    {
+      value: "payments",
+      label: (
+        <>
+          <CreditCard size={16} /> My Payments
+        </>
+      ),
+    },
   ];
 
   return (
@@ -143,7 +155,11 @@ export default function StudentDashboard() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}
                   >
-                    <ResidenceCard residence={residence} onApply={handleApply} />
+                    <ResidenceCard
+                      residence={residence}
+                      onApply={handleApply}
+                      hasApplied={appliedResidenceIds.has(residence.id)}
+                    />
                   </motion.div>
                 ))}
               </div>
@@ -154,7 +170,7 @@ export default function StudentDashboard() {
                 </Card>
               )}
             </div>
-          ) : (
+          ) : active === "applications" ? (
             <Card>
               <div className={styles.cardHead}>
                 <h3 className={styles.cardTitle}>Application Status Tracking</h3>
@@ -179,9 +195,12 @@ export default function StudentDashboard() {
                 )}
               </div>
             </Card>
+          ) : (
+            <PaymentsTab payments={myPayments} processPayment={processPayment} showStudent={false} />
           )
         }
       </Tabs>
+
       <ApplicationDialog
         open={!!applyTarget}
         residence={applyTarget}

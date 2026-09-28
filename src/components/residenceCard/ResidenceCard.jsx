@@ -1,23 +1,28 @@
-import { MapPin, Users, Wifi, Car, Utensils, Dumbbell, Check } from 'lucide-react';
-import Button from '@components/button/Button';
-import Card from '@components/card/Card';
-import Badge from '@components/badge/Badge';
-import styles from './ResidenceCard.module.css';
+import { MapPin, Users, Wifi, Car, Utensils, Dumbbell, Check } from "lucide-react";
+import Button from "@components/button/Button";
+import Card from "@components/card/Card";
+import Badge from "@components/badge/Badge";
+import styles from "./ResidenceCard.module.css";
 
 function AmenityIcon({ amenity }) {
   const a = amenity.toLowerCase();
-  if (a.includes('wifi')) return <Wifi size={14} />;
-  if (a.includes('gym')) return <Dumbbell size={14} />;
-  if (a.includes('parking') || a.includes('car')) return <Car size={14} />;
-  if (a.includes('kitchen') || a.includes('cafeteria')) return <Utensils size={14} />;
+  if (a.includes("wifi")) return <Wifi size={14} />;
+  if (a.includes("gym")) return <Dumbbell size={14} />;
+  if (a.includes("parking") || a.includes("car")) return <Car size={14} />;
+  if (a.includes("kitchen") || a.includes("cafeteria")) return <Utensils size={14} />;
   return <Check size={14} />;
 }
 
-export default function ResidenceCard({ residence, onApply, showActions = false, onEdit, onDelete }) {
+export default function ResidenceCard({
+  residence,
+  onApply,
+  hasApplied = false,
+  showActions = false,
+  onEdit,
+  onDelete,
+}) {
   const isAvailable = residence.availableRooms > 0;
-  const occupancyRate = (
-    ((residence.totalRooms - residence.availableRooms) / residence.totalRooms) * 100
-  ).toFixed(0);
+  const occupancyRate = (((residence.totalRooms - residence.availableRooms) / residence.totalRooms) * 100).toFixed(0);
 
   return (
     <Card className={styles.card}>
@@ -39,7 +44,7 @@ export default function ResidenceCard({ residence, onApply, showActions = false,
         <div className={styles.metaRow}>
           <div className={styles.meta}>
             <MapPin size={16} />
-            <span>{residence.distance} km</span>
+            <span>{residence.distanceKm} km</span>
           </div>
           <div className={styles.meta}>
             <Users size={16} />
@@ -81,9 +86,9 @@ export default function ResidenceCard({ residence, onApply, showActions = false,
           <Button
             className={styles.applyBtn}
             onClick={() => onApply(residence.id)}
-            disabled={!isAvailable}
+            disabled={!isAvailable || hasApplied}
           >
-            {isAvailable ? 'Apply for Residence' : 'Not Available'}
+            {hasApplied ? "Already Applied" : isAvailable ? "Apply for Residence" : "Not Available"}
           </Button>
         )}
         {showActions && (

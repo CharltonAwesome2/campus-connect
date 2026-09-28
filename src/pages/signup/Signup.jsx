@@ -58,7 +58,7 @@ export default function Signup() {
       return;
     }
 
-    // Session is live — straight to the dashboard.
+    // Session is live - straight to the dashboard.
     navigate(`/${result.user.role}`);
   };
 

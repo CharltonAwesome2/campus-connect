@@ -1,4 +1,4 @@
-import { Calendar, Mail, Phone, CheckCircle, XCircle, Clock, FileText, CalendarDays } from 'lucide-react';
+import { Calendar, Mail, Phone, CheckCircle, XCircle, Clock, FileText, CalendarDays, Receipt } from 'lucide-react';
 import Button from '@components/button/Button';
 import Card from '@components/card/Card';
 import Badge from '@components/badge/Badge';
@@ -29,7 +29,13 @@ function StatusBadge({ status }) {
   );
 }
 
-export default function ApplicationCard({ application, showActions = false, onApprove, onReject }) {
+export default function ApplicationCard({
+  application,
+  showActions = false,
+  onApprove,
+  onReject,
+  onRequestPayment,
+}) {
   return (
     <Card className={styles.card}>
       <div className={styles.body}>
@@ -87,6 +93,18 @@ export default function ApplicationCard({ application, showActions = false, onAp
             <Button className={styles.rejectBtn} onClick={() => onReject?.(application.id)}>
               <XCircle size={16} />
               Reject
+            </Button>
+          </div>
+        )}
+
+        {showActions && application.status === 'approved' && onRequestPayment && (
+          <div className={styles.actions}>
+            <Button
+              className={styles.requestPaymentBtn}
+              onClick={() => onRequestPayment(application)}
+            >
+              <Receipt size={16} />
+              Request Payment
             </Button>
           </div>
         )}
