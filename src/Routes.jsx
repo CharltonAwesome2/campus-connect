@@ -7,6 +7,7 @@ import StudentDashboard from "@pages/studentDashboard/StudentDashboard";
 import LandlordDashboard from "@pages/landlordDashboard/LandlordDashboard";
 import AdminDashboard from "@pages/adminDashboard/AdminDashboard";
 import NotFound from "@pages/notFound/NotFound";
+import PaymentDetail from "@pages/paymentDetail/PaymentDetail";
 import ProtectedRoute from "@components/protectedRoute/ProtectedRoute";
 
 export const router = createBrowserRouter(
@@ -39,8 +40,16 @@ export const router = createBrowserRouter(
         </ProtectedRoute>
       ),
     },
+    {
+      path: "/payments/:id",
+      element: (
+        <ProtectedRoute allowedRole={["student", "landlord", "admin"]}>
+          <PaymentDetail />
+        </ProtectedRoute>
+      ),
+    },
 
     { path: "*", Component: NotFound },
   ],
-  { basename: "/campus-connect" }
+  { basename: "/campus-connect" },
 );

@@ -1,6 +1,6 @@
 // src/data/accounts.js
 // Quick-login shortcuts for testing. Real authentication goes through Supabase.
-// The passwords here mirror the seeded auth users — they are test accounts only.
+// The passwords here mirror the seeded auth users - they are test accounts only.
 
 export const accounts = [
   {

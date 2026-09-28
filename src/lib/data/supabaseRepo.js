@@ -89,29 +89,6 @@ export const supabaseRepo = {
     }));
   },
 
-  async addResidence(residence) {
-    // Caller passes `landlordId` as a real UUID from the landlords table.
-    const { data, error } = await supabase
-      .from("residences")
-      .insert({
-        name: residence.name,
-        address: residence.address,
-        description: residence.description,
-        image_url: residence.image, // store whatever form the caller passes
-        price: residence.price,
-        distance_km: residence.distanceKm,
-        available_rooms: residence.availableRooms,
-        total_rooms: residence.totalRooms,
-        type: residence.type,
-        landlord_id: residence.landlordId,
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-    return this.getResidences();
-  },
-
   async removeResidence(id) {
     const { error } = await supabase.from("residences").update({ is_active: false }).eq("id", id);
 
@@ -201,13 +178,39 @@ export const supabaseRepo = {
 
   async updateApplicationStatus(id, status) {
     const { error } = await supabase.from("applications").update({ status }).eq("id", id);
-    if (error) throw error; // ← throw immediately
+    if (error) throw error;
 
     const { data: appRow } = await supabase
       .from("applications")
-      .select("students ( user_id ), residences ( name )")
+      .select("students ( user_id ), residence_id, residences ( name, price )")
       .eq("id", id)
       .single();
+
+    // Approve → decrement rooms + create payment
+    if (status === "approved" && appRow?.residence_id) {
+      const { error: roomErr } = await supabase.rpc("decrement_available_rooms", {
+        p_residence_id: appRow.residence_id,
+      });
+      if (roomErr) throw roomErr;
+
+      // Only create a payment if none exists yet for this application
+      const { data: existing } = await supabase.from("payments").select("id").eq("application_id", id).maybeSingle();
+
+      if (!existing) {
+        const dueDate = new Date();
+        dueDate.setDate(dueDate.getDate() + 14);
+
+        const { error: payErr } = await supabase.from("payments").insert({
+          application_id: id,
+          amount: appRow.residences.price,
+          due_date: dueDate.toISOString().slice(0, 10),
+          status: "pending",
+          reference: `PAY-${Date.now()}`,
+          description: "Monthly rent",
+        });
+        if (payErr) throw payErr;
+      }
+    }
 
     if (appRow?.students?.user_id) {
       await supabase.from("notifications").insert({
@@ -217,8 +220,128 @@ export const supabaseRepo = {
         link: "/student",
       });
     }
+
     return this.getApplications();
   },
+
+  // -------------------------------------------------------------------------
+  // Payments
+  // -------------------------------------------------------------------------
+  async getPayments() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    const { data, error } = await supabase
+      .from("payments")
+      .select(
+        `
+      id, amount, due_date, paid_at, created_at, status, reference, application_id,
+      description,
+      gateway_provider, gateway_transaction_id, payment_method,
+      applications (
+        id,
+        residences ( id, name, landlord_id, landlords ( company_name, email ) ),
+        students ( id, user_id, profiles ( full_name, email ) )
+      )
+    `,
+      )
+      .order("due_date", { ascending: false });
+
+    if (error) throw error;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return (data || []).map((p) => {
+      // Overdue is computed at read time: a pending payment whose due_date
+      // has passed is displayed as overdue without writing to the DB.
+      let status = p.status;
+      if (status === "pending" && p.due_date) {
+        const due = new Date(p.due_date);
+        due.setHours(0, 0, 0, 0);
+        if (due < today) status = "overdue";
+      }
+
+      return {
+        id: p.id,
+        applicationId: p.application_id,
+        amount: Number(p.amount),
+        dueDate: p.due_date,
+        paidAt: p.paid_at,
+        createdAt: p.created_at,
+        description: p.description,
+        status,
+        reference: p.reference,
+        gatewayProvider: p.gateway_provider,
+        gatewayTransactionId: p.gateway_transaction_id,
+        paymentMethod: p.payment_method,
+        residenceId: p.applications?.residences?.id,
+        residenceName: p.applications?.residences?.name,
+        landlordId: p.applications?.residences?.landlord_id,
+        landlordCompany: p.applications?.residences?.landlords?.company_name,
+        landlordEmail: p.applications?.residences?.landlords?.email,
+        studentId: p.applications?.students?.id,
+        studentUserId: p.applications?.students?.user_id,
+        studentName: p.applications?.students?.profiles?.full_name,
+        studentEmail: p.applications?.students?.profiles?.email,
+      };
+    });
+  },
+
+  async processPayment(paymentId, method = "eft") {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("You must be signed in to pay.");
+
+    const { data: payment, error: fetchErr } = await supabase
+      .from("payments")
+      .select("id, amount, reference, status, application_id")
+      .eq("id", paymentId)
+      .single();
+
+    if (fetchErr) throw fetchErr;
+    if (!payment) throw new Error("Payment not found");
+    if (payment.status === "paid") throw new Error("This payment is already paid");
+    if (payment.status === "cancelled") throw new Error("This payment was cancelled");
+
+    const { chargePayment } = await import("@lib/payments/gateway");
+    const result = await chargePayment({
+      amount: payment.amount,
+      reference: payment.reference,
+      method,
+    });
+    if (!result.ok) throw new Error(result.error || "Payment failed");
+
+    const { error: rpcErr } = await supabase.rpc("simulate_payment_success", {
+      p_payment_id: paymentId,
+      p_provider: result.provider,
+      p_transaction_id: result.transactionId,
+      p_method: result.method,
+    });
+    if (rpcErr) throw rpcErr;
+
+    // Notify the landlord that the payment landed.
+    const { data: appRow } = await supabase
+      .from("applications")
+      .select("residences ( name, landlords ( user_id ) ), students ( profiles ( full_name ) )")
+      .eq("id", payment.application_id)
+      .single();
+
+    if (appRow?.residences?.landlords?.user_id) {
+      await supabase.from("notifications").insert({
+        user_id: appRow.residences.landlords.user_id,
+        title: "Payment received",
+        body: `${appRow.students?.profiles?.full_name || "A student"} paid R${Number(payment.amount).toLocaleString()} for ${appRow.residences?.name}.`,
+        link: "/landlord",
+      });
+    }
+
+    return this.getPayments();
+  },
+
   // -------------------------------------------------------------------------
   // Notifications
   // -------------------------------------------------------------------------
@@ -340,5 +463,40 @@ export const supabaseRepo = {
     }
 
     return this.getResidences();
+  },
+
+  async createPaymentRequest({ applicationId, amount, description, dueDate }) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("You must be signed in.");
+
+    const { error } = await supabase.from("payments").insert({
+      application_id: applicationId,
+      amount,
+      description: description || "Monthly rent",
+      due_date: dueDate,
+      status: "pending",
+      reference: `PAY-${Date.now()}`,
+    });
+    if (error) throw error;
+
+    // Notify the student that a new payment has been requested.
+    const { data: appRow } = await supabase
+      .from("applications")
+      .select("students ( user_id ), residences ( name )")
+      .eq("id", applicationId)
+      .single();
+
+    if (appRow?.students?.user_id) {
+      await supabase.from("notifications").insert({
+        user_id: appRow.students.user_id,
+        title: "New payment request",
+        body: `${appRow.residences?.name || "Your residence"}: R${Number(amount).toLocaleString()} due ${new Date(dueDate).toLocaleDateString()}.`,
+        link: "/student",
+      });
+    }
+
+    return this.getPayments();
   },
 };

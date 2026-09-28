@@ -1,0 +1,78 @@
+.wrap {
+  padding: 1.5rem;
+  min-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.iconWrap {
+  background: #dbeafe;
+  color: #2563eb;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0.125rem 0 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.error {
+  font-size: 0.875rem;
+  color: #dc2626;
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.cancelBtn {
+  background: transparent;
+  color: #4b5563;
+  border-color: #e5e7eb;
+}
+
+.cancelBtn:hover {
+  background: #f3f4f6;
+}
+
+.submitBtn {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.submitBtn:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}

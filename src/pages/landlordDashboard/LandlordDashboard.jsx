@@ -2,6 +2,8 @@ import { useState } from "react";
 import DashboardShell from "@components/dashboardShell/DashboardShell";
 import ResidenceCard from "@components/residenceCard/ResidenceCard";
 import ApplicationCard from "@components/applicationCard/ApplicationCard";
+import PaymentsTab from "@components/paymentsTab/PaymentsTab";
+import PaymentRequestDialog from "@components/paymentRequestDialog/PaymentRequestDialog";
 import StatCard from "@components/statCard/StatCard";
 import EmptyState from "@components/emptyState/EmptyState";
 import AddPropertyDialog from "@components/addPropertyDialog/AddPropertyDialog";
@@ -9,17 +11,17 @@ import Card from "@components/card/Card";
 import Tabs from "@components/tabs/Tabs";
 import Button from "@components/button/Button";
 import { useData } from "@data/DataContext";
-import { Building2, FileText, Plus, DollarSign, Users, TrendingUp, Home } from "lucide-react";
+import { Building2, FileText, Plus, DollarSign, Users, TrendingUp, Home, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "motion/react";
 import styles from "./LandlordDashboard.module.css";
 import { useAuth } from "@context/AuthContext";
 
 export default function LandlordDashboard() {
-  const [editingResidence, setEditingResidence] = useState(null);
-  const { residences, applications, addResidence, removeResidence, updateApplicationStatus } = useData();
+  const { residences, applications, payments, addResidence, removeResidence, updateApplicationStatus } = useData();
   const { user } = useAuth();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [paymentRequestTarget, setPaymentRequestTarget] = useState(null);
 
   const landlordResidences = user?.landlordId ? residences.filter((r) => r.landlordId === user.landlordId) : [];
 
@@ -27,37 +29,60 @@ export default function LandlordDashboard() {
     ? applications.filter((a) => landlordResidences.some((r) => r.id === a.residenceId))
     : [];
 
-  const handleApprove = (applicationId) => {
+  const landlordPayments = user?.landlordId ? payments.filter((p) => p.landlordId === user.landlordId) : [];
+
+  const handleApprove = async (applicationId) => {
     const application = applications.find((a) => a.id === applicationId);
-    updateApplicationStatus(applicationId, "approved");
-    toast.success(`Application approved for ${application?.studentName}`, {
-      description: "The student has been notified.",
-    });
+    try {
+      await updateApplicationStatus(applicationId, "approved");
+      toast.success(`Application approved for ${application?.studentName}`, {
+        description: "The student has been notified.",
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || "Could not approve application");
+    }
   };
 
-  const handleReject = (applicationId) => {
+  const handleReject = async (applicationId) => {
     const application = applications.find((a) => a.id === applicationId);
-    updateApplicationStatus(applicationId, "rejected");
-    toast.error(`Application rejected for ${application?.studentName}`, {
-      description: "The student has been notified.",
-    });
+    try {
+      await updateApplicationStatus(applicationId, "rejected");
+      toast.error(`Application rejected for ${application?.studentName}`, {
+        description: "The student has been notified.",
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || "Could not reject application");
+    }
+  };
+
+  const handleRequestPayment = (application) => {
+    setPaymentRequestTarget(application);
+  };
+
+  const handleSubmitPaymentRequest = async ({ applicationId, amount, description, dueDate }) => {
+    try {
+      await createPaymentRequest({ applicationId, amount, description, dueDate });
+      toast.success("Payment request created", {
+        description: `${paymentRequestTarget?.studentName} has been billed.`,
+      });
+      setPaymentRequestTarget(null);
+    } catch (err) {
+      // The dialog surfaces the error; rethrow so it can.
+      throw err;
+    }
   };
 
   const handleEdit = (residenceId) => {
     const residence = residences.find((r) => r.id === residenceId);
-    if (residence) setEditingResidence(residence);
+    toast.info(`Editing ${residence?.name}`);
   };
 
-  const handleDelete = async (residenceId) => {
+  const handleDelete = (residenceId) => {
     const residence = residences.find((r) => r.id === residenceId);
-    if (!window.confirm(`Remove ${residence?.name}?`)) return;
-    try {
-      await removeResidence(residenceId);
-      toast.success(`${residence?.name} removed from listings`);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to remove property");
-    }
+    removeResidence(residenceId);
+    toast.success(`${residence?.name} removed from listings`);
   };
 
   const handleAddProperty = (data) => {
@@ -65,37 +90,18 @@ export default function LandlordDashboard() {
       toast.error("Please fill in name, price, and total rooms.");
       return;
     }
-
-    if (editingResidence) {
-      updateResidence(editingResidence.id, {
-        name: data.name,
-        address: data.address,
-        description: data.description,
-        distanceKm: data.distanceKm,
-        price: data.price,
-        type: data.type,
-        totalRooms: data.totalRooms,
-        availableRooms: data.availableRooms,
-        amenityIds: data.amenityIds,
-      });
-      toast.success("Property updated successfully!");
-      setEditingResidence(null);
-      setIsAddDialogOpen(false);
-      return;
-    }
-
     addResidence({
       landlordId: user.landlordId,
       name: data.name,
-      address: data.address,
-      description: data.description,
+      address: data.address || "-",
+      description: data.description || "",
       image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=800",
-      distanceKm: data.distanceKm,
+      distanceKm: data.distance ?? 0,
       price: data.price,
       type: data.type,
       totalRooms: data.totalRooms,
-      availableRooms: data.availableRooms || data.totalRooms,
-      amenityIds: data.amenityIds,
+      availableRooms: data.totalRooms,
+      amenities: [],
     });
     toast.success("New property added successfully!");
     setIsAddDialogOpen(false);
@@ -147,6 +153,14 @@ export default function LandlordDashboard() {
         </>
       ),
     },
+    {
+      value: "payments",
+      label: (
+        <>
+          <CreditCard size={16} /> Payments
+        </>
+      ),
+    },
   ];
 
   return (
@@ -187,7 +201,7 @@ export default function LandlordDashboard() {
                 ))}
               </div>
             </div>
-          ) : (
+          ) : active === "applications" ? (
             <Card>
               <div className={styles.cardHead}>
                 <h3 className={styles.cardTitle}>Student Applications</h3>
@@ -205,24 +219,29 @@ export default function LandlordDashboard() {
                       showActions
                       onApprove={handleApprove}
                       onReject={handleReject}
+                      onRequestPayment={handleRequestPayment}
                     />
                   </motion.div>
                 ))}
                 {landlordApplications.length === 0 && <EmptyState Icon={Users} title="No applications received yet" />}
               </div>
             </Card>
+          ) : (
+            <PaymentsTab payments={landlordPayments} showStudent title="Payments Received" />
           )
         }
       </Tabs>
 
       <AddPropertyDialog
-        open={isAddDialogOpen || !!editingResidence}
-        onClose={() => {
-          setIsAddDialogOpen(false);
-          setEditingResidence(null);
-        }}
+        open={isAddDialogOpen}
+        onClose={() => setIsAddDialogOpen(false)}
         onSubmit={handleAddProperty}
-        initialData={editingResidence}
+      />
+      <PaymentRequestDialog
+        open={!!paymentRequestTarget}
+        application={paymentRequestTarget}
+        onClose={() => setPaymentRequestTarget(null)}
+        onSubmit={handleSubmitPaymentRequest}
       />
     </DashboardShell>
   );

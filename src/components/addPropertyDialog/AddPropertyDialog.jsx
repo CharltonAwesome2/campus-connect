@@ -70,7 +70,7 @@ export default function AddPropertyDialog({ open, onClose, onSubmit, initialData
       totalRooms: Number(form.totalRooms),
       availableRooms: Number(form.availableRooms) || 0,
       type: form.type,
-      address: form.address || "—",
+      address: form.address || "-",
       description: form.description || "",
       amenityIds: form.amenityIds,
     });
@@ -134,7 +134,7 @@ export default function AddPropertyDialog({ open, onClose, onSubmit, initialData
           </div>
         </div>
 
-        {/* Occupancy readout — derived, not editable directly */}
+        {/* Occupancy readout - derived, not editable directly */}
         <div className={styles.occupancyRow}>
           <div className={styles.occupancyLabel}>
             <span>Occupancy</span>

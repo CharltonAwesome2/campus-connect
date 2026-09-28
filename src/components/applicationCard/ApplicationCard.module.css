@@ -118,3 +118,15 @@
   margin: 0;
   white-space: pre-wrap;
 }
+
+.requestPaymentBtn {
+  flex: 1;
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.requestPaymentBtn:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
