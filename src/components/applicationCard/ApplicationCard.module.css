@@ -130,3 +130,16 @@
   background: #1d4ed8;
   border-color: #1d4ed8;
 }
+
+.reviewBtn {
+  flex: 1;
+  background: transparent;
+  color: #4f46e5;
+  border-color: #c7d2fe;
+}
+
+.reviewBtn:hover {
+  background: #eef2ff;
+  border-color: #a5b4fc;
+  color: #4338ca;
+}

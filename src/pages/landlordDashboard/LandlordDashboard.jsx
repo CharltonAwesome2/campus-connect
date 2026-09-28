@@ -1,9 +1,12 @@
-import { useState } from "react";
+// src/pages/landlordDashboard/LandlordDashboard.jsx
+import { useState, useMemo } from "react";
 import DashboardShell from "@components/dashboardShell/DashboardShell";
 import ResidenceCard from "@components/residenceCard/ResidenceCard";
 import ApplicationCard from "@components/applicationCard/ApplicationCard";
 import PaymentsTab from "@components/paymentsTab/PaymentsTab";
 import PaymentRequestDialog from "@components/paymentRequestDialog/PaymentRequestDialog";
+import ReviewsList from "@components/reviewsList/ReviewsList";
+import MaintenanceCard from "@components/maintenanceCard/MaintenanceCard";
 import StatCard from "@components/statCard/StatCard";
 import EmptyState from "@components/emptyState/EmptyState";
 import AddPropertyDialog from "@components/addPropertyDialog/AddPropertyDialog";
@@ -11,25 +14,93 @@ import Card from "@components/card/Card";
 import Tabs from "@components/tabs/Tabs";
 import Button from "@components/button/Button";
 import { useData } from "@data/DataContext";
-import { Building2, FileText, Plus, DollarSign, Users, TrendingUp, Home, CreditCard } from "lucide-react";
+import {
+  Building2,
+  FileText,
+  Plus,
+  DollarSign,
+  Users,
+  TrendingUp,
+  Home,
+  CreditCard,
+  Star,
+  Wrench,
+} from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "motion/react";
 import styles from "./LandlordDashboard.module.css";
 import { useAuth } from "@context/AuthContext";
 
 export default function LandlordDashboard() {
-  const { residences, applications, payments, addResidence, removeResidence, updateApplicationStatus } = useData();
+  const {
+    residences,
+    applications,
+    payments,
+    reviews,
+    maintenanceRequests,
+    addResidence,
+    removeResidence,
+    updateApplicationStatus,
+    updateMaintenanceStatus,
+    updateMaintenancePriority,
+    createPaymentRequest,
+  } = useData();
   const { user } = useAuth();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [paymentRequestTarget, setPaymentRequestTarget] = useState(null);
 
-  const landlordResidences = user?.landlordId ? residences.filter((r) => r.landlordId === user.landlordId) : [];
+  const landlordResidences = user?.landlordId
+    ? residences.filter((r) => r.landlordId === user.landlordId)
+    : [];
 
   const landlordApplications = user?.landlordId
     ? applications.filter((a) => landlordResidences.some((r) => r.id === a.residenceId))
     : [];
 
-  const landlordPayments = user?.landlordId ? payments.filter((p) => p.landlordId === user.landlordId) : [];
+  const landlordPayments = user?.landlordId
+    ? payments.filter((p) => p.landlordId === user.landlordId)
+    : [];
+
+  const landlordResidenceIds = useMemo(
+    () => new Set(landlordResidences.map((r) => r.id)),
+    [landlordResidences],
+  );
+
+  const landlordReviews = useMemo(
+    () => reviews.filter((r) => landlordResidenceIds.has(r.residenceId)),
+    [reviews, landlordResidenceIds],
+  );
+
+  const landlordMaintenance = useMemo(() => {
+    const list = maintenanceRequests.filter((m) => landlordResidenceIds.has(m.residenceId));
+    // Sort: open + in_progress first (by priority asc), then resolved/closed (by date desc).
+    const active = ["open", "in_progress"];
+    return list.sort((a, b) => {
+      const aActive = active.includes(a.status);
+      const bActive = active.includes(b.status);
+      if (aActive && !bActive) return -1;
+      if (!aActive && bActive) return 1;
+      if (aActive && bActive) return a.priority - b.priority;
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+  }, [maintenanceRequests, landlordResidenceIds]);
+
+  const reviewsByResidence = useMemo(() => {
+    const map = new Map();
+    landlordReviews.forEach((r) => {
+      if (!map.has(r.residenceId)) map.set(r.residenceId, []);
+      map.get(r.residenceId).push(r);
+    });
+    return map;
+  }, [landlordReviews]);
+
+  const averageRating = landlordReviews.length
+    ? (landlordReviews.reduce((s, r) => s + r.rating, 0) / landlordReviews.length).toFixed(1)
+    : "-";
+
+  const openMaintenanceCount = landlordMaintenance.filter(
+    (m) => m.status === "open" || m.status === "in_progress",
+  ).length;
 
   const handleApprove = async (applicationId) => {
     const application = applications.find((a) => a.id === applicationId);
@@ -69,8 +140,27 @@ export default function LandlordDashboard() {
       });
       setPaymentRequestTarget(null);
     } catch (err) {
-      // The dialog surfaces the error; rethrow so it can.
       throw err;
+    }
+  };
+
+  const handleMaintenanceStatusChange = async (id, status) => {
+    try {
+      await updateMaintenanceStatus(id, status);
+      toast.success(`Status updated to ${status.replace("_", " ")}`);
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || "Could not update status");
+    }
+  };
+
+  const handleMaintenancePriorityChange = async (id, priority) => {
+    try {
+      await updateMaintenancePriority(id, priority);
+      toast.success("Priority updated");
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || "Could not update priority");
     }
   };
 
@@ -108,11 +198,16 @@ export default function LandlordDashboard() {
   };
 
   const totalRooms = landlordResidences.reduce((sum, r) => sum + r.totalRooms, 0);
-  const occupiedRooms = landlordResidences.reduce((sum, r) => sum + (r.totalRooms - r.availableRooms), 0);
+  const occupiedRooms = landlordResidences.reduce(
+    (sum, r) => sum + (r.totalRooms - r.availableRooms),
+    0,
+  );
   const occupancyRate = totalRooms > 0 ? ((occupiedRooms / totalRooms) * 100).toFixed(1) : 0;
   const avgPrice =
     landlordResidences.length > 0
-      ? (landlordResidences.reduce((sum, r) => sum + r.price, 0) / landlordResidences.length).toFixed(0)
+      ? (
+          landlordResidences.reduce((sum, r) => sum + r.price, 0) / landlordResidences.length
+        ).toFixed(0)
       : 0;
   const pendingCount = landlordApplications.filter((a) => a.status === "pending").length;
 
@@ -126,40 +221,18 @@ export default function LandlordDashboard() {
       bg: "#dcfce7",
       progress: parseFloat(occupancyRate),
     },
-    {
-      label: "Avg. Price",
-      value: `R${Number(avgPrice).toLocaleString()}`,
-      Icon: DollarSign,
-      color: "#4f46e5",
-      bg: "#e0e7ff",
-    },
+    { label: "Avg. Price", value: `R${Number(avgPrice).toLocaleString()}`, Icon: DollarSign, color: "#4f46e5", bg: "#e0e7ff" },
     { label: "Pending Apps", value: pendingCount, Icon: FileText, color: "#ca8a04", bg: "#fef9c3" },
   ];
 
   const tabs = [
+    { value: "properties", label: (<><Building2 size={16} /> My Properties</>) },
+    { value: "applications", label: (<><FileText size={16} /> Applications ({pendingCount})</>) },
+    { value: "payments", label: (<><CreditCard size={16} /> Payments</>) },
+    { value: "reviews", label: (<><Star size={16} /> Reviews ({landlordReviews.length})</>) },
     {
-      value: "properties",
-      label: (
-        <>
-          <Building2 size={16} /> My Properties
-        </>
-      ),
-    },
-    {
-      value: "applications",
-      label: (
-        <>
-          <FileText size={16} /> Applications ({pendingCount})
-        </>
-      ),
-    },
-    {
-      value: "payments",
-      label: (
-        <>
-          <CreditCard size={16} /> Payments
-        </>
-      ),
+      value: "maintenance",
+      label: (<><Wrench size={16} /> Maintenance ({openMaintenanceCount})</>),
     },
   ];
 
@@ -172,64 +245,169 @@ export default function LandlordDashboard() {
         className={styles.statsGrid}
       >
         {statCards.map(({ label, value, Icon, color, bg, progress }) => (
-          <StatCard key={label} label={label} value={value} Icon={Icon} color={color} bg={bg} progress={progress} />
+          <StatCard
+            key={label}
+            label={label}
+            value={value}
+            Icon={Icon}
+            color={color}
+            bg={bg}
+            progress={progress}
+          />
         ))}
       </motion.div>
 
       <Tabs tabs={tabs} defaultValue="properties">
-        {(active) =>
-          active === "properties" ? (
-            <div className={styles.tabContent}>
-              <div className={styles.sectionHead}>
-                <h2 className={styles.sectionTitle}>Property Listings</h2>
-                <Button className={styles.addBtn} onClick={() => setIsAddDialogOpen(true)}>
-                  <Plus size={16} />
-                  Add Property
-                </Button>
-              </div>
+        {(active) => {
+          if (active === "properties") {
+            return (
+              <div className={styles.tabContent}>
+                <div className={styles.sectionHead}>
+                  <h2 className={styles.sectionTitle}>Property Listings</h2>
+                  <Button className={styles.addBtn} onClick={() => setIsAddDialogOpen(true)}>
+                    <Plus size={16} /> Add Property
+                  </Button>
+                </div>
 
-              <div className={styles.residenceGrid}>
-                {landlordResidences.map((residence, index) => (
-                  <motion.div
-                    key={residence.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                  >
-                    <ResidenceCard residence={residence} showActions onEdit={handleEdit} onDelete={handleDelete} />
-                  </motion.div>
-                ))}
+                <div className={styles.residenceGrid}>
+                  {landlordResidences.map((residence, index) => (
+                    <motion.div
+                      key={residence.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.05 }}
+                    >
+                      <ResidenceCard
+                        residence={residence}
+                        showActions
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
               </div>
-            </div>
-          ) : active === "applications" ? (
+            );
+          }
+
+          if (active === "applications") {
+            return (
+              <Card>
+                <div className={styles.cardHead}>
+                  <h3 className={styles.cardTitle}>Student Applications</h3>
+                </div>
+                <div className={styles.cardBody}>
+                  {landlordApplications.map((application, index) => (
+                    <motion.div
+                      key={application.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.1 }}
+                    >
+                      <ApplicationCard
+                        application={application}
+                        showActions
+                        onApprove={handleApprove}
+                        onReject={handleReject}
+                        onRequestPayment={handleRequestPayment}
+                      />
+                    </motion.div>
+                  ))}
+                  {landlordApplications.length === 0 && (
+                    <EmptyState Icon={Users} title="No applications received yet" />
+                  )}
+                </div>
+              </Card>
+            );
+          }
+
+          if (active === "payments") {
+            return <PaymentsTab payments={landlordPayments} showStudent title="Payments Received" />;
+          }
+
+          if (active === "reviews") {
+            return (
+              <Card>
+                <div className={styles.cardHead}>
+                  <h3 className={styles.cardTitle}>
+                    Reviews {landlordReviews.length > 0 && `· Avg ${averageRating}`}
+                  </h3>
+                </div>
+                <div className={styles.cardBody}>
+                  {landlordReviews.length === 0 ? (
+                    <EmptyState
+                      Icon={Star}
+                      title="No reviews yet"
+                      subtitle="Students can review your residences after their application is approved"
+                    />
+                  ) : (
+                    Array.from(reviewsByResidence.entries()).map(([residenceId, list], index) => {
+                      const residence = landlordResidences.find((r) => r.id === residenceId);
+                      return (
+                        <motion.div
+                          key={residenceId}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.1 }}
+                          style={{ marginBottom: "1.25rem" }}
+                        >
+                          <h4
+                            style={{
+                              fontSize: "0.875rem",
+                              fontWeight: 600,
+                              color: "#111827",
+                              marginBottom: "0.5rem",
+                            }}
+                          >
+                            {residence?.name ?? "Residence"}
+                          </h4>
+                          <ReviewsList reviews={list} />
+                        </motion.div>
+                      );
+                    })
+                  )}
+                </div>
+              </Card>
+            );
+          }
+
+          // maintenance
+          return (
             <Card>
               <div className={styles.cardHead}>
-                <h3 className={styles.cardTitle}>Student Applications</h3>
+                <h3 className={styles.cardTitle}>
+                  Maintenance Requests {openMaintenanceCount > 0 && `· ${openMaintenanceCount} active`}
+                </h3>
               </div>
               <div className={styles.cardBody}>
-                {landlordApplications.map((application, index) => (
+                {landlordMaintenance.map((request, index) => (
                   <motion.div
-                    key={application.id}
+                    key={request.id}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                    style={{ marginBottom: "1rem" }}
                   >
-                    <ApplicationCard
-                      application={application}
-                      showActions
-                      onApprove={handleApprove}
-                      onReject={handleReject}
-                      onRequestPayment={handleRequestPayment}
+                    <MaintenanceCard
+                      request={request}
+                      showControls
+                      showStudent
+                      onStatusChange={handleMaintenanceStatusChange}
+                      onPriorityChange={handleMaintenancePriorityChange}
                     />
                   </motion.div>
                 ))}
-                {landlordApplications.length === 0 && <EmptyState Icon={Users} title="No applications received yet" />}
+                {landlordMaintenance.length === 0 && (
+                  <EmptyState
+                    Icon={Wrench}
+                    title="No maintenance requests"
+                    subtitle="Requests from your approved students will appear here"
+                  />
+                )}
               </div>
             </Card>
-          ) : (
-            <PaymentsTab payments={landlordPayments} showStudent title="Payments Received" />
-          )
-        }
+          );
+        }}
       </Tabs>
 
       <AddPropertyDialog

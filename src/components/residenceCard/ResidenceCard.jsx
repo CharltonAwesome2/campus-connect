@@ -1,7 +1,10 @@
-import { MapPin, Users, Wifi, Car, Utensils, Dumbbell, Check } from "lucide-react";
+// src/components/residenceCard/ResidenceCard.jsx
+import { MapPin, Users, Wifi, Car, Utensils, Dumbbell, Check, Star } from "lucide-react";
 import Button from "@components/button/Button";
 import Card from "@components/card/Card";
 import Badge from "@components/badge/Badge";
+import FavoriteButton from "@components/favoriteButton/FavoriteButton";
+import ReviewsList from "@components/reviewsList/ReviewsList";
 import styles from "./ResidenceCard.module.css";
 
 function AmenityIcon({ amenity }) {
@@ -20,6 +23,11 @@ export default function ResidenceCard({
   showActions = false,
   onEdit,
   onDelete,
+  isFavorite = false,
+  onToggleFavorite,
+  onLeaveReview,
+  myReview = null,
+  reviews = [],
 }) {
   const isAvailable = residence.availableRooms > 0;
   const occupancyRate = (((residence.totalRooms - residence.availableRooms) / residence.totalRooms) * 100).toFixed(0);
@@ -31,6 +39,11 @@ export default function ResidenceCard({
         {!isAvailable && (
           <div className={styles.occupiedOverlay}>
             <Badge className={styles.occupiedBadge}>Fully Occupied</Badge>
+          </div>
+        )}
+        {onToggleFavorite && (
+          <div className={styles.favoriteWrap}>
+            <FavoriteButton isFavorite={isFavorite} onToggle={() => onToggleFavorite(residence.id)} />
           </div>
         )}
       </div>
@@ -75,6 +88,12 @@ export default function ResidenceCard({
           ))}
         </div>
 
+        {reviews.length > 0 && (
+          <div className={styles.reviewsSummary}>
+            <ReviewsList reviews={reviews} compact />
+          </div>
+        )}
+
         <div className={styles.price}>
           R{residence.price.toLocaleString()}
           <span className={styles.priceUnit}>/month</span>
@@ -91,6 +110,14 @@ export default function ResidenceCard({
             {hasApplied ? "Already Applied" : isAvailable ? "Apply for Residence" : "Not Available"}
           </Button>
         )}
+
+        {onLeaveReview && (
+          <Button className={styles.reviewBtn} onClick={() => onLeaveReview(residence, myReview)}>
+            <Star size={16} />
+            {myReview ? "Edit review" : "Leave a review"}
+          </Button>
+        )}
+
         {showActions && (
           <>
             <Button className={styles.editBtn} onClick={() => onEdit?.(residence.id)}>

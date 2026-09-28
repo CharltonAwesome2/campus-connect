@@ -12,6 +12,9 @@ export function DataProvider({ children }) {
   const [notifications, setNotifications] = useState([]);
   const [payments, setPayments] = useState([]);
   const [amenities, setAmenities] = useState([]);
+  const [favorites, setFavorites] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [maintenanceRequests, setMaintenanceRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { user } = useAuth();
@@ -19,7 +22,6 @@ export function DataProvider({ children }) {
   useEffect(() => {
     let cancelled = false;
 
-    // No user → clear data, don't fetch
     if (!user) {
       setResidences([]);
       setApplications([]);
@@ -27,6 +29,9 @@ export function DataProvider({ children }) {
       setNotifications([]);
       setPayments([]);
       setAmenities([]);
+      setFavorites([]);
+      setReviews([]);
+      setMaintenanceRequests([]);
       setLoading(false);
       return;
     }
@@ -34,7 +39,7 @@ export function DataProvider({ children }) {
     async function load() {
       setLoading(true);
       try {
-        const [res, apps, monthly, notes, pays, amenityList] = await Promise.all([
+        const [res, apps, monthly, notes, pays, amenityList, favs, revs, maint] = await Promise.all([
           db.getResidences(),
           db.getApplications(),
           db.getMonthlyData(),
@@ -50,6 +55,18 @@ export function DataProvider({ children }) {
             console.error("[data] amenities fetch failed", err);
             return [];
           }),
+          db.getFavorites().catch((err) => {
+            console.error("[data] favorites fetch failed", err);
+            return [];
+          }),
+          db.getReviews().catch((err) => {
+            console.error("[data] reviews fetch failed", err);
+            return [];
+          }),
+          db.getMaintenanceRequests().catch((err) => {
+            console.error("[data] maintenance fetch failed", err);
+            return [];
+          }),
         ]);
         if (cancelled) return;
         setResidences(res);
@@ -58,6 +75,9 @@ export function DataProvider({ children }) {
         setNotifications(notes);
         setPayments(pays);
         setAmenities(amenityList);
+        setFavorites(favs);
+        setReviews(revs);
+        setMaintenanceRequests(maint);
       } catch (err) {
         console.error("Failed to load data", err);
         if (!cancelled) setError(err);
@@ -96,7 +116,6 @@ export function DataProvider({ children }) {
   const updateApplicationStatus = async (id, status) => {
     const updated = await db.updateApplicationStatus(id, status);
     setApplications(updated);
-    // Approval can create a payment and decrement rooms, so refresh both.
     setPayments(await db.getPayments());
     setResidences(await db.getResidences());
   };
@@ -121,6 +140,38 @@ export function DataProvider({ children }) {
     setPayments(updated);
   };
 
+  const addFavorite = async (residenceId) => {
+    const updated = await db.addFavorite(residenceId);
+    setFavorites(updated);
+  };
+
+  const removeFavorite = async (residenceId) => {
+    const updated = await db.removeFavorite(residenceId);
+    setFavorites(updated);
+  };
+
+  const addReview = async (payload) => {
+    const updated = await db.addReview(payload);
+    setReviews(updated);
+  };
+
+  const addMaintenanceRequest = async (payload) => {
+    const updated = await db.addMaintenanceRequest(payload);
+    setMaintenanceRequests(updated);
+  };
+
+  const updateMaintenanceStatus = async (id, status) => {
+    const updated = await db.updateMaintenanceStatus(id, status);
+    setMaintenanceRequests(updated);
+    // Status change may fire a notification for the student.
+    setNotifications(await db.getNotifications());
+  };
+
+  const updateMaintenancePriority = async (id, priority) => {
+    const updated = await db.updateMaintenancePriority(id, priority);
+    setMaintenanceRequests(updated);
+  };
+
   const unreadCount = useMemo(() => notifications.filter((n) => !n.isRead).length, [notifications]);
 
   return (
@@ -131,10 +182,13 @@ export function DataProvider({ children }) {
         monthlyData,
         notifications,
         amenities,
-        unreadCount, 
+        unreadCount,
         loading,
         error,
         payments,
+        favorites,
+        reviews,
+        maintenanceRequests,
         processPayment,
         createPaymentRequest,
         addResidence,
@@ -144,6 +198,12 @@ export function DataProvider({ children }) {
         updateApplicationStatus,
         markNotificationRead,
         markAllNotificationsRead,
+        addFavorite,
+        removeFavorite,
+        addReview,
+        addMaintenanceRequest,
+        updateMaintenanceStatus,
+        updateMaintenancePriority,
       }}
     >
       {children}

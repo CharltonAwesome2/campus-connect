@@ -169,3 +169,30 @@
   color: #b91c1c;
   background: #fef2f2;
 }
+
+/* Appended for Reviews + Favorites */
+.favoriteWrap {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 2;
+}
+
+.reviewsSummary {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border, #e5e7eb);
+}
+
+.reviewBtn {
+  flex: 1;
+  background: transparent;
+  color: #4f46e5;
+  border-color: #c7d2fe;
+}
+
+.reviewBtn:hover {
+  background: #eef2ff;
+  border-color: #a5b4fc;
+  color: #4338ca;
+}
