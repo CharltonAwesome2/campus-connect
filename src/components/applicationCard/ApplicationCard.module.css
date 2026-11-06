@@ -143,3 +143,33 @@
   border-color: #a5b4fc;
   color: #4338ca;
 }
+
+.myReview {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 0.5rem;
+  background: var(--surface-2, #f9fafb);
+}
+.myReviewHead {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+.myReviewStars {
+  display: inline-flex;
+  gap: 1px;
+  color: #f59e0b;
+}
+.myReviewLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted-fg, #6b7280);
+}
+.myReviewBody {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--fg, #111827);
+  white-space: pre-wrap;
+}
