@@ -118,6 +118,7 @@ export function DataProvider({ children }) {
     setApplications(updated);
     setPayments(await db.getPayments());
     setResidences(await db.getResidences());
+    setNotifications(await db.getNotifications());
   };
 
   const markNotificationRead = async (id) => {
@@ -132,6 +133,7 @@ export function DataProvider({ children }) {
 
   const processPayment = async (id, method = "eft") => {
     const updated = await db.processPayment(id, method);
+    setNotifications(await db.getNotifications());
     setPayments(updated);
   };
 

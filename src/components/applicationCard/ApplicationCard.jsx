@@ -116,6 +116,20 @@ export default function ApplicationCard({
             </Button>
           </div>
         )}
+
+        {!showActions && myReview && (
+          <div className={styles.myReview}>
+            <div className={styles.myReviewHead}>
+              <div className={styles.myReviewStars}>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <Star key={n} size={14} fill={n <= myReview.rating ? "currentColor" : "none"} />
+                ))}
+              </div>
+              <span className={styles.myReviewLabel}>Your review{myReview.comment ? "" : " (no comment)"}</span>
+            </div>
+            {myReview.comment && <p className={styles.myReviewBody}>{myReview.comment}</p>}
+          </div>
+        )}
         {!showActions && application.status === "approved" && onLeaveReview && (
           <div className={styles.actions}>
             <Button className={styles.reviewBtn} onClick={() => onLeaveReview(application)}>
